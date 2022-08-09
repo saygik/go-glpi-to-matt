@@ -61,11 +61,13 @@ type Ticket struct {
 	Date    string `db:"date" json:"date"`
 	Name    string `db:"name" json:"name"`
 	Content string `db:"content" json:"content"`
+	Author  string `db:"author" json:"author"`
 	Org     string `db:"org" json:"org"`
 }
 
 func Tickets(lastId int) (tickets []Ticket, err error) {
 	sql := fmt.Sprintf(`SELECT glpi_tickets.id , glpi_tickets.content,
+                                CONCAT(ifnull(NULLIF(glpi_users.realname, ''), glpi_users.name),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
 								CASE glpi_tickets.status
 									WHEN 1 THEN "новый" WHEN 2 THEN "в работе (назначен)" WHEN 3 THEN "в работе (запланирован)" WHEN 4 THEN "ожидающий" WHEN 5 THEN "решен" WHEN 6 THEN "закрыт"
@@ -73,6 +75,7 @@ func Tickets(lastId int) (tickets []Ticket, err error) {
 								END AS status,
 								glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, glpi_tickets.date FROM glpi_tickets 
 								LEFT JOIN glpi_entities ON glpi_tickets.entities_id = glpi_entities.id
+							    LEFT JOIN glpi_users ON glpi_tickets.users_id_recipient=glpi_users.id
 								LEFT JOIN glpi_plugin_fields_ticketfailures ON glpi_plugin_fields_ticketfailures.items_id=glpi_tickets.id
 								LEFT JOIN glpi_plugin_fields_failcategoryfielddropdowns ON glpi_plugin_fields_failcategoryfielddropdowns.id=glpi_plugin_fields_ticketfailures.plugin_fields_failcategoryfielddropdowns_id
 								WHERE glpi_tickets.is_deleted<>TRUE  AND glpi_plugin_fields_failcategoryfielddropdowns.id>4 

@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/saygik/go-glpi-to-matt/db"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -35,12 +35,12 @@ func main() {
 	customFormatter.FullTimestamp = true
 	log.Formatter = customFormatter
 	log.Info("-")
-	filetext, err := ioutil.ReadFile("id.id")
+	lastid, err := os.ReadFile("id.id")
 	if err != nil {
 		log.Warn("Error loading id.id file or wrong file, please create one in the root directory: " + err.Error())
-		filetext = []byte("0")
+		lastid = []byte("0")
 	}
-	id, _ := strconv.Atoi(string(filetext))
+	id, _ := strconv.Atoi(string(lastid))
 	fmt.Printf("Number is %d", id)
 	db.Init(fmt.Sprintf("%s:%s@tcp(%s)/%s", os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_SERVER"), os.Getenv("DB_NAME")))
 	defer db.CloseDB()
@@ -54,18 +54,26 @@ func main() {
 	}
 
 	for _, ticket := range tickets {
-		sendToMattermost(ticket)
+		err := sendToMattermost(ticket)
+		if err != nil {
+			log.Warn("Error sending ticket " + ticket.Id)
+		}
 		log.Info("Sended ticket " + ticket.Id)
 	}
 
-	lastTicketId, err := strconv.Atoi(string(tickets[len(tickets)-1].Id))
+	lastTicketId, err := strconv.Atoi(tickets[len(tickets)-1].Id)
 	if err == nil {
 		f, err := os.Create("id.id")
 		if err != nil {
 			log.Errorf("Невозможно создать файл для записи последнего id  объекта GLPI")
 		}
-		defer f.Close()
-		f.WriteString(strconv.Itoa(lastTicketId))
+		defer func(f *os.File) {
+			err := f.Close()
+			if err != nil {
+
+			}
+		}(f)
+		_, _ = f.WriteString(strconv.Itoa(lastTicketId))
 	}
 
 }
@@ -103,17 +111,17 @@ func sendToMattermost(ticket db.Ticket) error {
 	if err != nil {
 		content = ""
 	}
-	fields := []Field{Field{Short: "true", Title: "влияние", Value: "среднее"}, Field{Short: "true", Title: "статус", Value: ticket.Status}}
+	fields := []Field{{Short: "true", Title: "влияние", Value: "среднее"}, {Short: "true", Title: "статус", Value: ticket.Status}}
 	color := colorByStatus(ticket.Status)
-	attachments := []Attachment{Attachment{
+	attachments := []Attachment{{
 		Fields:     fields,
 		AuthorName: ticket.Org,
 		Color:      color,
 		Title:      "ОТКАЗ: " + ticket.Name,
 		TitleLink:  "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id,
-		Text:       "**КАТЕГОРИЯ ТЯЖЕСТИ ПОСЛЕДСТВИЙ ОТКАЗА**: " + "E" + "\n*ОПИСАНИЕ*: " + content,
+		Text:       "**КАТЕГОРИЯ ТЯЖЕСТИ ПОСЛЕДСТВИЙ ОТКАЗА**: " + ticket.Kat + "\n*ОПИСАНИЕ*: " + content,
 		ThumbUrl:   "https://support.rw/pics/glpi_project_logo.png",
-		Footer:     ticket.Date + ", ID: " + ticket.Id,
+		Footer:     fmt.Sprintf(`%s , ID: %s , Автор: %s`, ticket.Date, ticket.Id, ticket.Author),
 	}}
 	message := Message{IconUrl: "https://support.rw/pics/favicon.ico", Username: "GLPI", Attachments: attachments}
 	jsonValue, _ := json.Marshal(message)
@@ -130,7 +138,12 @@ func sendToMattermost(ticket db.Ticket) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 	return nil
 }
 func colorByStatus(status string) string {
