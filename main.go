@@ -1,25 +1,27 @@
 package main
 
 import (
-	"bytes"
-	"crypto/tls"
-	"encoding/json"
 	"fmt"
-	md "github.com/JohannesKaufmann/html-to-markdown"
-	"github.com/JohannesKaufmann/html-to-markdown/plugin"
 	"github.com/joho/godotenv"
 	"github.com/saygik/go-glpi-to-matt/db"
+	"github.com/saygik/go-glpi-to-matt/models"
 	"github.com/sirupsen/logrus"
-	"io"
-	"net/http"
 	"os"
 	"strconv"
 )
 
 var log = logrus.New()
+var GLPIModel = new(models.GLPIModel)
+var MattermostModel = new(models.MattermostModel)
 
 func main() {
-	err := godotenv.Load()
+	exPath, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Println(exPath) // for example /home/user
+
+	err = godotenv.Load()
 	if err != nil {
 		log.Fatalf("err loading settings from env: %v", err)
 	}
@@ -42,125 +44,134 @@ func main() {
 	}
 	id, _ := strconv.Atoi(string(lastid))
 	fmt.Printf("Number is %d", id)
-	db.Init(fmt.Sprintf("%s:%s@tcp(%s)/%s", os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_SERVER"), os.Getenv("DB_NAME")))
+	//	db.Init(fmt.Sprintf("%s:%s@tcp(%s)/%s", os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_SERVER"), os.Getenv("DB_NAME")))
+	db.Init(fmt.Sprintf("%s:%s@tcp(%s)/%s", os.Getenv("GLPI_TO_MATT_DB_USER"), os.Getenv("GLPI_TO_MATT_DB_PASS"), os.Getenv("GLPI_TO_MATT_DB_SERVER"), os.Getenv("GLPI_TO_MATT_DB_NAME")))
 	defer db.CloseDB()
-	tickets, err := db.Tickets(id)
+	MattermostModel.Init()
+
+	enumeratePostsFromFiles(exPath)
+	enumerateTicketsFromID(id)
+
+}
+func enumeratePostsFromFiles(dir string) error {
+	confFiles, err := WalkFiles(dir, "*.conf")
+	if err != nil {
+		return err
+	}
+	fmt.Println(confFiles) // for example /home/user
+	posts := []MattermostPost{}
+	for _, file := range confFiles {
+		content, err := os.ReadFile(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+		post, err := MattermostPostFromJSON(content)
+		post.Filepath = file
+		if err == nil {
+			posts = append(posts, post)
+		}
+	}
+	for _, post := range posts {
+		ticket, err := GLPIModel.OneTicket(post.Ticket.Id)
+		if err == nil {
+			if post.Ticket.StatusID != ticket.StatusID {
+				sendMessageToMattermost("Статус изменён на **"+ticket.Status+"**", post.Id)
+			}
+			if post.Ticket.Kat != ticket.Kat {
+				sendMessageToMattermost("Категория тяжести последствий отказа изменён на **"+ticket.Kat+"**", post.Id)
+			}
+			oldCommentsCount := StringToInt(post.Ticket.CommentsCount)
+			newCommentsCount := StringToInt(ticket.CommentsCount)
+			if newCommentsCount > oldCommentsCount {
+				comments, err := GLPIModel.TicketComments(post.Ticket.Id, post.LastComment)
+				if err != nil {
+					log.Fatal("Error selecting tickets from db: " + err.Error())
+				}
+				if len(comments) == 0 {
+					log.Warn("No comments")
+				}
+				lastComment := 0
+				for _, comment := range comments {
+					content := ConvertToMarkdown(comment.Content)
+					sendMessageToMattermost("`Комментарий в заявке: "+comment.Author+":` "+content, post.Id)
+					lastComment, _ = strconv.Atoi(comment.Id)
+				}
+				post.LastComment = lastComment
+			}
+			oldSolutionsCount := StringToInt(post.Ticket.SolutionsCount)
+			newSolutionsCount := StringToInt(ticket.SolutionsCount)
+			if newSolutionsCount > oldSolutionsCount {
+				solutions, err := GLPIModel.TicketSolutions(post.Ticket.Id, post.LastSolution)
+				if err != nil {
+					log.Fatal("Error selecting solutions from db: " + err.Error())
+				}
+				if len(solutions) == 0 {
+					log.Warn("No solutions")
+				}
+				lastSolution := 0
+				for _, solution := range solutions {
+					content := ConvertToMarkdown(solution.Content)
+					sendMessageToMattermost(fmt.Sprintf("`Решение заявки: "+solution.Author+":` "+content), post.Id)
+					lastSolution, _ = strconv.Atoi(solution.Id)
+				}
+				post.LastSolution = lastSolution
+			}
+
+			if post.Ticket.StatusID != ticket.StatusID ||
+				post.Ticket.Kat != ticket.Kat ||
+				post.Ticket.Name != ticket.Name ||
+				post.Ticket.Content != ticket.Content ||
+				post.Ticket.Impact != ticket.Impact ||
+				newCommentsCount != oldCommentsCount {
+				ticket.CommentsCount = strconv.Itoa(newCommentsCount)
+				err := updateTicketInMattermost(post.Id, ticket)
+				if err == nil {
+					post.Ticket = ticket
+					savePostToFile(post)
+				}
+			}
+
+			if post.Ticket.StatusID == "6" {
+				os.Remove(post.Filepath)
+			}
+		} else {
+			log.Error(err)
+		}
+
+	}
+	return nil
+}
+
+func enumerateTicketsFromID(id int) error {
+
+	tickets, err := GLPIModel.Tickets(id)
 	if err != nil {
 		log.Fatal("Error selecting tickets from db: " + err.Error())
 	}
+
 	if len(tickets) == 0 {
 		log.Warn("No tickets")
 		os.Exit(0)
 	}
 
 	for _, ticket := range tickets {
-		err := sendToMattermost(ticket)
+		postId, err := sendTicketToMattermost(ticket)
 		if err != nil {
 			log.Warn("Error sending ticket " + ticket.Id)
 		}
+		MattermostModel.UpdateThreadFollowAllUsersInChannel(postId)
+		post := MattermostPost{Id: postId, Ticket: ticket, LastComment: 0}
+		savePostToFile(post)
 		log.Info("Sended ticket " + ticket.Id)
+
+		if ticket.Status == "" {
+
+		}
 	}
 
 	lastTicketId, err := strconv.Atoi(tickets[len(tickets)-1].Id)
 	if err == nil {
-		f, err := os.Create("id.id")
-		if err != nil {
-			log.Errorf("Невозможно создать файл для записи последнего id  объекта GLPI")
-		}
-		defer func(f *os.File) {
-			err := f.Close()
-			if err != nil {
-
-			}
-		}(f)
-		_, _ = f.WriteString(strconv.Itoa(lastTicketId))
+		saveToFile("id.id", strconv.Itoa(lastTicketId))
 	}
-
-}
-
-type Field struct {
-	Short string `json:"short"`
-	Title string `json:"title"`
-	Value string `json:"value"`
-}
-type Attachment struct {
-	Fallback   string  `json:"fallback"`
-	Color      string  `json:"color"`
-	AuthorName string  `json:"author_name"`
-	Title      string  `json:"title"`
-	TitleLink  string  `json:"title_link"`
-	Text       string  `json:"text"`
-	ThumbUrl   string  `json:"thumb_url"`
-	Footer     string  `json:"footer"`
-	Fields     []Field `json:"fields"`
-}
-type Message struct {
-	IconUrl     string       `json:"icon_url"`
-	Username    string       `json:"username"`
-	Attachments []Attachment `json:"attachments"`
-}
-
-func sendToMattermost(ticket db.Ticket) error {
-	url := os.Getenv("MATT_URL")
-	converter := md.NewConverter("", true, nil)
-	converter.Use(plugin.GitHubFlavored())
-	converter.Use(plugin.Table())
-	content, err := converter.ConvertString(ticket.Content)
-	content, err = converter.ConvertString(content)
-	//content, err = converter.ConvertString(content)
-	if err != nil {
-		content = ""
-	}
-	fields := []Field{{Short: "true", Title: "влияние", Value: "среднее"}, {Short: "true", Title: "статус", Value: ticket.Status}}
-	color := colorByStatus(ticket.Status)
-	attachments := []Attachment{{
-		Fields:     fields,
-		AuthorName: ticket.Org,
-		Color:      color,
-		Title:      "ОТКАЗ: " + ticket.Name,
-		TitleLink:  "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id,
-		Text:       "**КАТЕГОРИЯ ТЯЖЕСТИ ПОСЛЕДСТВИЙ ОТКАЗА**: " + ticket.Kat + "\n*ОПИСАНИЕ*: " + content,
-		ThumbUrl:   "https://support.rw/pics/glpi_project_logo.png",
-		Footer:     fmt.Sprintf(`%s , ID: %s , Автор: %s`, ticket.Date, ticket.Id, ticket.Author),
-	}}
-	message := Message{IconUrl: "https://support.rw/pics/favicon.ico", Username: "GLPI", Attachments: attachments}
-	jsonValue, _ := json.Marshal(message)
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	client := &http.Client{}
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonValue))
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-
-		}
-	}(resp.Body)
 	return nil
-}
-func colorByStatus(status string) string {
-	switch status {
-	case "новый":
-		return "#FF4059"
-	case "в работе (назначен)":
-		return "#FF4059"
-	case "в работе (запланирован)":
-		return "#FF4059"
-	case "ожидающий":
-		return "#FF4059"
-	case "решен":
-		return "#bbbe6d"
-	case "закрыт":
-		return "#343a40"
-	default:
-		return "#FF4059"
-	}
 }
