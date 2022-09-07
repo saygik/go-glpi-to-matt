@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+
 	"github.com/joho/godotenv"
 	"github.com/saygik/go-glpi-to-matt/db"
 	"github.com/saygik/go-glpi-to-matt/models"
 	"github.com/sirupsen/logrus"
-	"os"
-	"strconv"
 )
 
 var log = logrus.New()
@@ -143,7 +144,6 @@ func enumeratePostsFromFiles(dir string) error {
 }
 
 func enumerateTicketsFromID(id int) error {
-
 	tickets, err := GLPIModel.Tickets(id)
 	if err != nil {
 		log.Fatal("Error selecting tickets from db: " + err.Error())
@@ -157,16 +157,13 @@ func enumerateTicketsFromID(id int) error {
 	for _, ticket := range tickets {
 		postId, err := sendTicketToMattermost(ticket)
 		if err != nil {
-			log.Warn("Error sending ticket " + ticket.Id)
+			log.Warn("Error sending ticket " + ticket.Id + ":" + err.Error())
 		}
 		//		MattermostModel.UpdateThreadFollowAllUsersInChannel(postId)
 		post := MattermostPost{Id: postId, Ticket: ticket, LastComment: 0}
 		savePostToFile(post)
 		log.Info("Sended ticket " + ticket.Id)
 
-		if ticket.Status == "" {
-
-		}
 	}
 
 	lastTicketId, err := strconv.Atoi(tickets[len(tickets)-1].Id)

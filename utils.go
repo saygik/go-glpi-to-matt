@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+
 	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/JohannesKaufmann/html-to-markdown/plugin"
 	"github.com/saygik/go-glpi-to-matt/models"
 	mattermost "github.com/saygik/mattermost/client"
-	"os"
-	"path/filepath"
-	"strconv"
 )
 
 type MattermostPost struct {
@@ -50,10 +51,8 @@ func saveToFile(id, body string) error {
 		log.Errorf("Невозможно создать файл для записи последнего id  объекта GLPI")
 	}
 	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
+		_ = f.Close()
 
-		}
 	}(f)
 	_, _ = f.WriteString(body)
 	return nil
@@ -84,10 +83,11 @@ func MattermostPostMsgTextFromTicket(ticket models.Ticket) string {
 	return message
 }
 func ConvertToMarkdown(text string) string {
+	var err error
 	converter := md.NewConverter("", true, nil)
 	converter.Use(plugin.GitHubFlavored())
 	converter.Use(plugin.Table())
-	content, err := converter.ConvertString(text)
+	content, _ := converter.ConvertString(text)
 	content, err = converter.ConvertString(content)
 	//content, err = converter.ConvertString(content)
 	if err != nil {
@@ -104,7 +104,7 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 	mLevel := GetMessageLevelByStatus(ticket.Status)
 	//	fields := []mattermost.MsgAttachmentField{{Short: "false", Title: "Влияние", Value: ticket.Impact}, {Short: "false", Title: "Статус", Value: ticket.Status}}
 	msgProperties := mattermost.MsgProperties{
-		[]mattermost.MsgAttachment{
+		Attachments: []mattermost.MsgAttachment{
 			{
 				//				Author:    ticket.Org,
 				Color:     mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
@@ -177,23 +177,4 @@ func GetMessageLevelByStatus(status string) string {
 	}
 
 	return statusInfo
-}
-
-func colorByStatus(status string) string {
-	switch status {
-	case "новый":
-		return "#FF4059"
-	case "в работе (назначен)":
-		return "#FF4059"
-	case "в работе (запланирован)":
-		return "#FF4059"
-	case "ожидающий":
-		return "#FF4059"
-	case "решен":
-		return "#bbbe6d"
-	case "закрыт":
-		return "#343a40"
-	default:
-		return "#FF4059"
-	}
 }
