@@ -28,5 +28,5 @@
 .env
 cert/
 logs.txt
-id.id
+*.id
 /.idea/go-glpi-to-matt.iml
