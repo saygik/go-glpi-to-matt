@@ -110,7 +110,8 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 				Color:     mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
 				Title:     "ОТКАЗ: " + ticket.Name,
 				TitleLink: "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id,
-				Text: "`КАТЕГОРИЯ:` " + ticket.Kat + "\n`ОПИСАНИЕ:` " + content +
+				Text: "`КАТЕГОРИЯ:` " + ticket.Kat +
+					"\n`ОПИСАНИЕ:` " + content +
 					"\n `Автор:` " + ticket.Author +
 					"\n `Статус:` " + ticket.Status,
 				Footer:   fmt.Sprintf(`%s , ID: %s `, ticket.Date, ticket.Id),

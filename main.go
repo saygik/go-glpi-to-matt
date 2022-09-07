@@ -49,8 +49,8 @@ func main() {
 	defer db.CloseDB()
 	MattermostModel.Init()
 
-	enumeratePostsFromFiles(exPath)
 	enumerateTicketsFromID(id)
+	enumeratePostsFromFiles(exPath)
 
 }
 func enumeratePostsFromFiles(dir string) error {
@@ -58,7 +58,7 @@ func enumeratePostsFromFiles(dir string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(confFiles) // for example /home/user
+	//fmt.Println(confFiles) // for example /home/user
 	posts := []MattermostPost{}
 	for _, file := range confFiles {
 		content, err := os.ReadFile(file)
@@ -151,7 +151,7 @@ func enumerateTicketsFromID(id int) error {
 
 	if len(tickets) == 0 {
 		log.Warn("No tickets")
-		os.Exit(0)
+		return nil
 	}
 
 	for _, ticket := range tickets {
@@ -159,7 +159,7 @@ func enumerateTicketsFromID(id int) error {
 		if err != nil {
 			log.Warn("Error sending ticket " + ticket.Id)
 		}
-		MattermostModel.UpdateThreadFollowAllUsersInChannel(postId)
+		//		MattermostModel.UpdateThreadFollowAllUsersInChannel(postId)
 		post := MattermostPost{Id: postId, Ticket: ticket, LastComment: 0}
 		savePostToFile(post)
 		log.Info("Sended ticket " + ticket.Id)
