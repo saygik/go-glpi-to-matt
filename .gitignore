@@ -30,3 +30,4 @@ cert/
 logs.txt
 *.id
 /.idea/go-glpi-to-matt.iml
+id.id
