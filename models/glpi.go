@@ -93,7 +93,7 @@ func (m GLPIModel) Tickets(lastId int) (tickets []Ticket, err error) {
 								LEFT JOIN glpi_plugin_fields_ticketfailures ON glpi_plugin_fields_ticketfailures.items_id=glpi_tickets.id
 								LEFT JOIN glpi_plugin_fields_failcategoryfielddropdowns ON glpi_plugin_fields_failcategoryfielddropdowns.id=glpi_plugin_fields_ticketfailures.plugin_fields_failcategoryfielddropdowns_id
 								WHERE glpi_tickets.is_deleted<>TRUE  AND glpi_plugin_fields_failcategoryfielddropdowns.id>4 
-                     		    AND glpi_tickets.name not like '%%тет%%' AND glpi_tickets.name not like '%%test%%' 
+                     		    AND glpi_tickets.name not like '%%тест%%' AND glpi_tickets.name not like '%%test%%' 
                                 AND glpi_tickets.id>%d limit 10`, lastId)
 	_, err = db.GetDB().Select(&tickets, proc)
 
