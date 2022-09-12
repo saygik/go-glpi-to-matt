@@ -65,7 +65,7 @@ func (m GLPIModel) OneTicket(ticketID string) (ticket Ticket, err error) {
                                 glpi_tickets.status as status_id,
                                 (SELECT count(id) from glpi_itilfollowups WHERE items_id=%s) as comments_count,
                                 (SELECT count(id) from glpi_itilsolutions WHERE items_id=%s) as solutions_count,
-								glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, glpi_tickets.date, glpi_tickets.date_mod FROM glpi_tickets 
+								glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, IFNULL(glpi_tickets.date,'') as date, glpi_tickets.date_mod FROM glpi_tickets 
 								LEFT JOIN glpi_entities ON glpi_tickets.entities_id = glpi_entities.id
 							    LEFT JOIN glpi_users ON glpi_tickets.users_id_recipient=glpi_users.id
 								LEFT JOIN glpi_plugin_fields_ticketfailures ON glpi_plugin_fields_ticketfailures.items_id=glpi_tickets.id
@@ -87,13 +87,13 @@ func (m GLPIModel) Tickets(lastId int) (tickets []Ticket, err error) {
 									ELSE "неизвестен"
 								END AS status,
                                 glpi_tickets.status as status_id,
-								glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, glpi_tickets.date, glpi_tickets.date_mod FROM glpi_tickets 
+								glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, IFNULL(glpi_tickets.date,'') as date, glpi_tickets.date_mod FROM glpi_tickets 
 								LEFT JOIN glpi_entities ON glpi_tickets.entities_id = glpi_entities.id
 							    LEFT JOIN glpi_users ON glpi_tickets.users_id_recipient=glpi_users.id
 								LEFT JOIN glpi_plugin_fields_ticketfailures ON glpi_plugin_fields_ticketfailures.items_id=glpi_tickets.id
 								LEFT JOIN glpi_plugin_fields_failcategoryfielddropdowns ON glpi_plugin_fields_failcategoryfielddropdowns.id=glpi_plugin_fields_ticketfailures.plugin_fields_failcategoryfielddropdowns_id
 								WHERE glpi_tickets.is_deleted<>TRUE  AND glpi_plugin_fields_failcategoryfielddropdowns.id>4 
-                     		    AND glpi_tickets.name not like '%%тест%%' AND glpi_tickets.name not like '%%test%%' 
+                     		    AND glpi_tickets.name not like '%%тет%%' AND glpi_tickets.name not like '%%test%%' 
                                 AND glpi_tickets.id>%d limit 10`, lastId)
 	_, err = db.GetDB().Select(&tickets, proc)
 

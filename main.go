@@ -94,7 +94,7 @@ func enumeratePostsFromFiles(dir string) error {
 				lastComment := 0
 				for _, comment := range comments {
 					content := ConvertToMarkdown(comment.Content)
-					sendMessageToMattermost("`Комментарий в заявке: "+comment.Author+":` "+content, post.Id)
+					sendMessageToMattermost("**Комментарий в заявке** /*"+comment.Author+"*/: "+content, post.Id)
 					lastComment, _ = strconv.Atoi(comment.Id)
 				}
 				post.LastComment = lastComment
@@ -112,7 +112,7 @@ func enumeratePostsFromFiles(dir string) error {
 				lastSolution := 0
 				for _, solution := range solutions {
 					content := ConvertToMarkdown(solution.Content)
-					sendMessageToMattermost(fmt.Sprintf("`Решение заявки: "+solution.Author+":` "+content), post.Id)
+					sendMessageToMattermost(fmt.Sprintf("**Решение заявки** /*"+solution.Author+"*/: "+content), post.Id)
 					lastSolution, _ = strconv.Atoi(solution.Id)
 				}
 				post.LastSolution = lastSolution
