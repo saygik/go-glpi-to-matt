@@ -123,6 +123,7 @@ func enumeratePostsFromFiles(dir string) error {
 				post.Ticket.Name != ticket.Name ||
 				post.Ticket.Content != ticket.Content ||
 				post.Ticket.Impact != ticket.Impact ||
+				newSolutionsCount != oldSolutionsCount ||
 				newCommentsCount != oldCommentsCount {
 				ticket.CommentsCount = strconv.Itoa(newCommentsCount)
 				err := updateTicketInMattermost(post.Id, ticket)
