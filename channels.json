@@ -1,0 +1,15 @@
+[
+    {
+      "key": "zhre1hsropyj7jx7tnxedmmgio",
+      "name": "Тестовый канал команды ИРЦ",
+      "org": "БЖД",
+      "ticket-category-level": 1
+    },
+    {
+        "key": "rywwddn4nigsmmh9y3bxizyqjy",
+        "name": "Тестовый канал команды НИТ",
+        "org": "БЖД > ИВЦ2",
+        "ticket-category-level": 1
+  
+    }
+]

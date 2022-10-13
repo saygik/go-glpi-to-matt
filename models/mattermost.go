@@ -1,22 +1,24 @@
 package models
 
 import (
-	mattermost "github.com/saygik/mattermost/client"
 	"os"
+
+	mattermost "github.com/saygik/mattermost/client"
 )
 
 var client *mattermost.Client4
-var channelID string
+
+//var channelID string
 
 type MattermostModel struct{}
 
 func (m MattermostModel) Init() {
 	client = mattermost.NewAPIv4Client(os.Getenv("GLPI_TO_MATT_MATT_URL"))
 	client.SetToken(os.Getenv("GLPI_TO_MATT_TOKEN"))
-	channelID = os.Getenv("GLPI_TO_MATT_CHANNEL_ID")
+	// channelID = os.Getenv("GLPI_TO_MATT_CHANNEL_ID")
 }
 func (m MattermostModel) CreatePostWithAttachtent(
-	message, rootId string, msgProperties mattermost.MsgProperties) (*mattermost.Post, error) {
+	channelID, message, rootId string, msgProperties mattermost.MsgProperties) (*mattermost.Post, error) {
 	createdPost, _, err := client.CreatePostWithAttachtent(channelID, message, "",
 		msgProperties)
 	if err != nil {
@@ -33,7 +35,7 @@ func (m MattermostModel) UpdatePostWithAttachtent(
 	}
 	return createdPost, nil
 }
-func (m MattermostModel) CreateSimplePost(message, rootId string) (*mattermost.Post, error) {
+func (m MattermostModel) CreateSimplePost(channelID, message, rootId string) (*mattermost.Post, error) {
 
 	createdPost, _, err := client.CreateSimpleMessagePost(channelID, message, rootId)
 	if err != nil {
@@ -41,7 +43,7 @@ func (m MattermostModel) CreateSimplePost(message, rootId string) (*mattermost.P
 	}
 	return createdPost, nil
 }
-func (m MattermostModel) UpdateThreadFollowAllUsersInChannel(PostId string) error {
+func (m MattermostModel) UpdateThreadFollowAllUsersInChannel(channelID, PostId string) error {
 
 	return client.UpdateThreadFollowAllUsersInChannel(channelID, PostId, true)
 }

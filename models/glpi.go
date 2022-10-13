@@ -2,12 +2,14 @@ package models
 
 import (
 	"fmt"
+
 	"github.com/saygik/go-glpi-to-matt/db"
 )
 
 type Ticket struct {
 	Id             string `db:"id" json:"id"`
 	Kat            string `db:"kat" json:"kat"`
+	KatId          string `db:"katid" json:"katid"`
 	Status         string `db:"status" json:"status"`
 	StatusID       string `db:"status_id" json:"status_id"`
 	Impact         string `db:"impact" json:"impact"`
@@ -58,6 +60,7 @@ func (m GLPIModel) OneTicket(ticketID string) (ticket Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_tickets.id , glpi_tickets.content,
                                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), glpi_users.name),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
+								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.id,0) AS katid,
 								CASE glpi_tickets.status
 									WHEN 1 THEN "новый" WHEN 2 THEN "в работе (назначен)" WHEN 3 THEN "в работе (запланирован)" WHEN 4 THEN "ожидающий" WHEN 5 THEN "решен" WHEN 6 THEN "закрыт"
 									ELSE "неизвестен"
@@ -82,6 +85,7 @@ func (m GLPIModel) Tickets(lastId int) (tickets []Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_tickets.id , glpi_tickets.content,
                                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), glpi_users.name),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
+								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.id,0) AS katid,
 								CASE glpi_tickets.status
 									WHEN 1 THEN "новый" WHEN 2 THEN "в работе (назначен)" WHEN 3 THEN "в работе (запланирован)" WHEN 4 THEN "ожидающий" WHEN 5 THEN "решен" WHEN 6 THEN "закрыт"
 									ELSE "неизвестен"
@@ -93,7 +97,7 @@ func (m GLPIModel) Tickets(lastId int) (tickets []Ticket, err error) {
 								LEFT JOIN glpi_plugin_fields_ticketfailures ON glpi_plugin_fields_ticketfailures.items_id=glpi_tickets.id
 								LEFT JOIN glpi_plugin_fields_failcategoryfielddropdowns ON glpi_plugin_fields_failcategoryfielddropdowns.id=glpi_plugin_fields_ticketfailures.plugin_fields_failcategoryfielddropdowns_id
 								WHERE glpi_tickets.is_deleted<>TRUE  AND glpi_plugin_fields_failcategoryfielddropdowns.id>4 
-                     		    AND glpi_tickets.name not like '%%тест%%' AND glpi_tickets.name not like '%%test%%' 
+                     		    AND glpi_tickets.name not like '%%020202%%' AND glpi_tickets.name not like '%%test%%' 
                                 AND glpi_tickets.id>%d limit 10`, lastId)
 	_, err = db.GetDB().Select(&tickets, proc)
 
