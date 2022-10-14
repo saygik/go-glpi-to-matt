@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 
@@ -19,7 +18,7 @@ var MattermostModel = new(models.MattermostModel)
 
 func LoadConfiguration(file string) (MattChannnelsConfig, error) {
 	cfg := MattChannnelsConfig{}
-	configFile, err := ioutil.ReadFile(file)
+	configFile, err := os.ReadFile(file)
 
 	if err != nil {
 		return cfg, err
