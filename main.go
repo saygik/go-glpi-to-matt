@@ -51,7 +51,7 @@ func main() {
 	customFormatter.TimestampFormat = "2006-01-02 15:04:05"
 	customFormatter.FullTimestamp = true
 	log.Formatter = customFormatter
-	log.Info("-")
+	//	log.Info("-")
 	lastid, err := os.ReadFile("id.id")
 	if err != nil {
 		log.Warn("Error loading id.id file or wrong file, please create one in the root directory: " + err.Error())
@@ -191,7 +191,7 @@ func enumerateTicketsFromID(id int) error {
 	}
 
 	if len(tickets) == 0 {
-		log.Warn("No tickets")
+		//		log.Warn("No tickets")
 		return nil
 	}
 	var post MattermostPost
