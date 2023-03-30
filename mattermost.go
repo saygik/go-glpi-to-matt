@@ -14,6 +14,7 @@ import (
 type MattermostChannelConf struct {
 	Key   string `json:"key"`
 	Name  string `json:"name"`
+	Tip   string `json:"tip"`
 	Org   string `json:"org"`
 	Level int    `json:"ticket-category-level"`
 }
@@ -96,8 +97,35 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 				Text: "`КАТЕГОРИЯ:` " + ticket.Kat +
 					"\n`ОПИСАНИЕ:` " + content +
 					"\n `Автор:` " + ticket.Author +
-					"\n `Статус:` " + ticket.Status,
-				Footer:   fmt.Sprintf(`%s , ID: %s `, ticket.Date, ticket.Id),
+					"\n `Статус:` " + ticket.Status +
+					"\n" +
+					"\n Дата возникновения: " + ticket.Date,
+				Footer:   fmt.Sprintf(`Зарегистрировано: %s , ID: %s `, ticket.DateCreation, ticket.Id),
+				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
+				//				Fields:    fields,
+			}}}
+	return msgProperties, nil
+}
+func MattermostPostMsgPropertieFromChange(ticket models.Ticket) (mattermost.MsgProperties, error) {
+	content := ConvertToMarkdown(ticket.Content)
+	//	fields := []Field{{Short: "true", Title: "влияние", Value: "среднее"}, {Short: "true", Title: "статус", Value: ticket.Status}}
+	//	color := colorByStatus(ticket.Status)
+	mLevel := GetMessageLevelByStatus(ticket.Status)
+	//	fields := []mattermost.MsgAttachmentField{{Short: "false", Title: "Влияние", Value: ticket.Impact}, {Short: "false", Title: "Статус", Value: ticket.Status}}
+	msgProperties := mattermost.MsgProperties{
+		Attachments: []mattermost.MsgAttachment{
+			{
+				//				Author:    ticket.Org,
+				Color:     mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
+				Title:     "Работы: " + ticket.Name,
+				TitleLink: "https://support.rw/front/change.form.php?id=" + ticket.Id,
+				Text: "`СИСТЕМА:` " + ticket.Kat +
+					"\n`ОПИСАНИЕ:` " + content +
+					"\n `Автор:` " + ticket.Author +
+					"\n `Статус:` " + ticket.Status +
+					"\n" +
+					"\n Дата возникновения: " + ticket.Date,
+				Footer:   fmt.Sprintf(`Зарегистрировано: %s , ID: %s `, ticket.DateCreation, ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,
 			}}}
@@ -127,10 +155,40 @@ func sendTicketToMattermost(channel *MattermostChannelConf, ticket models.Ticket
 	}
 	return createdPost.Id, nil
 }
+func sendChangeToMattermost(channel *MattermostChannelConf, ticket models.Ticket) (postId string, err error) {
+
+	message := MattermostPostMsgTextFromTicket(ticket)
+	msgProperties, err := MattermostPostMsgPropertieFromChange(ticket)
+	if err != nil {
+		msgProperties = mattermost.MsgProperties{}
+	}
+
+	createdPost, err := MattermostModel.CreatePostWithAttachtent(channel.Key, message, "", msgProperties)
+	if err != nil {
+		log.Warn("Error sending ticket " + ticket.Id + " to channel " + channel.Name + ":" + err.Error())
+	} else {
+		log.Info("Sended ticket " + ticket.Id + " to channel" + channel.Name)
+
+	}
+	return createdPost.Id, nil
+}
 func updateTicketInMattermost(postId string, ticket models.Ticket) error {
 
 	message := MattermostPostMsgTextFromTicket(ticket)
 	msgProperties, err := MattermostPostMsgPropertieFromTicket(ticket)
+	if err != nil {
+		msgProperties = mattermost.MsgProperties{}
+	}
+	_, err = MattermostModel.UpdatePostWithAttachtent(postId, message, msgProperties)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func updateChangeInMattermost(postId string, ticket models.Ticket) error {
+
+	message := MattermostPostMsgTextFromTicket(ticket)
+	msgProperties, err := MattermostPostMsgPropertieFromChange(ticket)
 	if err != nil {
 		msgProperties = mattermost.MsgProperties{}
 	}

@@ -65,8 +65,16 @@ func GetMessageLevelByStatus(status string) string {
 		"в работе (назначен)":     statusCritical,
 		"в работе (запланирован)": statusWarning,
 		"ожидающий":               statusWarning,
+		"ожидающие":               statusWarning,
+		"оценка":                  statusWarning,
+		"принята":                 statusWarning,
+		"тестирование":            statusWarning,
+		"уточнение":               statusWarning,
+		"рассмотрение":            statusWarning,
 		"решен":                   statusSuccess,
+		"применено":               statusSuccess,
 		"закрыт":                  statusInfo,
+		"закрыта":                 statusInfo,
 	}
 
 	if c, found := color[status]; found {

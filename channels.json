@@ -1,15 +1,15 @@
 [
     {
       "key": "zhre1hsropyj7jx7tnxedmmgio",
+      "tip": "tickets",
       "name": "Тестовый канал команды ИРЦ",
       "org": "БЖД",
       "ticket-category-level": 1
     },
-    {
-        "key": "rywwddn4nigsmmh9y3bxizyqjy",
-        "name": "Тестовый канал команды НИТ",
-        "org": "БЖД > ИРЦ Минск",
-        "ticket-category-level": 1
-  
-    }
+  {
+    "key": "ti9s1bbdb3gttdott1czm55e7o",
+    "tip": "changes",
+    "name": "ИРЦ - GLPI плановые и регламентные работы",
+    "org": "БЖД"
+}
 ]
