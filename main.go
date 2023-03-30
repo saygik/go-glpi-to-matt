@@ -226,43 +226,72 @@ func enumeratePostsFromFiles(posts []MattermostPost, dir string) error {
 			} else {
 
 				//********* Комментарии
-				oldCommentsCount := StringToInt(post.Ticket.CommentsCount)
-				newCommentsCount := StringToInt(ticket.CommentsCount)
-				if newCommentsCount > oldCommentsCount {
-					comments, err := GLPIModel.TicketComments(post.Ticket.Id, post.LastComment, itemtype)
-					if err != nil {
-						log.Fatal("Error selecting tickets from db: " + err.Error())
-					}
-					if len(comments) == 0 {
-						log.Warn("No comments")
-					}
-					lastComment := 0
-					for _, comment := range comments {
+				comments, err := GLPIModel.TicketComments(post.Ticket.Id, 0, itemtype)
+
+				if err != nil {
+					log.Fatal("Error selecting tickets from db: " + err.Error())
+				}
+				commentsUpdated := false
+				if len(comments) > 0 {
+					for i, comment := range comments {
 						content := ConvertToMarkdown(comment.Content)
-						sendMessageToMattermost(post.ChannelID, "**Комментарий в заявке** /*"+comment.Author+"*/: "+content, post.Id)
-						lastComment, _ = strconv.Atoi(comment.Id)
+						commentText := "**Комментарий в заявке** /*" + comment.Author + "*/: " + content
+						if num := comment_in_array(comment, post.Ticket.Comments); num > -1 {
+							if comment.DateMod != post.Ticket.Comments[num].DateMod {
+								commentsUpdated = true
+								updatePost(post.Ticket.Comments[num].PostId, commentText)
+							}
+							comments[i].Content = ""
+							comments[i].Author = ""
+							comments[i].PostId = post.Ticket.Comments[num].PostId
+							continue // break here
+						}
+						commentsUpdated = true
+						postId_c, err := sendMessageToMattermost(post.ChannelID, commentText, post.Id)
+						if err == nil {
+							comments[i].PostId = postId_c
+						} else {
+							comments[i].PostId = "x"
+						}
+						comments[i].Content = ""
+						comments[i].Author = ""
 					}
-					post.LastComment = lastComment
 				}
+				ticket.Comments = comments
 				//********* Решения
-				oldSolutionsCount := StringToInt(post.Ticket.SolutionsCount)
-				newSolutionsCount := StringToInt(ticket.SolutionsCount)
-				if newSolutionsCount > oldSolutionsCount {
-					solutions, err := GLPIModel.TicketSolutions(post.Ticket.Id, post.LastSolution, itemtype)
-					if err != nil {
-						log.Fatal("Error selecting solutions from db: " + err.Error())
-					}
-					if len(solutions) == 0 {
-						log.Warn("No solutions")
-					}
-					lastSolution := 0
-					for _, solution := range solutions {
-						content := ConvertToMarkdown(solution.Content)
-						sendMessageToMattermost(post.ChannelID, fmt.Sprintf("**Решение заявки** /*"+solution.Author+"*/: "+content), post.Id)
-						lastSolution, _ = strconv.Atoi(solution.Id)
-					}
-					post.LastSolution = lastSolution
+				solutions, err := GLPIModel.TicketSolutions(post.Ticket.Id, post.LastSolution, itemtype)
+				if err != nil {
+					log.Fatal("Error selecting solutions from db: " + err.Error())
 				}
+				solutionsUpdated := false
+				if len(solutions) > 0 {
+					for i, solution := range solutions {
+						content := ConvertToMarkdown(solution.Content)
+						solutionText := "**Решение заявки** /*" + solution.Author + "*/: " + content
+						if num := comment_in_array(solution, post.Ticket.Solutions); num > -1 {
+							if solution.DateMod != post.Ticket.Solutions[num].DateMod {
+								solutionsUpdated = true
+								updatePost(post.Ticket.Solutions[num].PostId, solutionText)
+							}
+							solutions[i].PostId = post.Ticket.Solutions[num].PostId
+							solutions[i].Content = ""
+							solutions[i].Author = ""
+							continue // break here
+						}
+						solutionsUpdated = true
+						postId_c, err := sendMessageToMattermost(post.ChannelID, solutionText, post.Id)
+						if err == nil {
+							solutions[i].PostId = postId_c
+						} else {
+							solutions[i].PostId = "x"
+						}
+						solutions[i].Content = ""
+						solutions[i].Author = ""
+					}
+				}
+				ticket.Solutions = solutions
+				//********* Решения
+
 				//********* Статус
 				if post.Ticket.StatusID != ticket.StatusID {
 					sendMessageToMattermost(post.ChannelID, "Статус изменён на **"+ticket.Status+"**", post.Id)
@@ -279,9 +308,8 @@ func enumeratePostsFromFiles(posts []MattermostPost, dir string) error {
 					post.Ticket.Content != ticket.Content ||
 					post.Ticket.Impact != ticket.Impact ||
 					post.Ticket.DateMod != ticket.DateMod ||
-					newSolutionsCount != oldSolutionsCount ||
-					newCommentsCount != oldCommentsCount {
-					ticket.CommentsCount = strconv.Itoa(newCommentsCount)
+					commentsUpdated ||
+					solutionsUpdated {
 					err := updateTicketInMattermost(post.Id, ticket)
 					if err == nil {
 						post.Ticket = ticket
@@ -377,6 +405,17 @@ func in_array(val models.Ticket, posts []MattermostPost) (exists bool) {
 	for _, post := range posts {
 		if post.Ticket.Id == val.Id {
 			exists = true
+			return
+		}
+	}
+	return
+}
+
+func comment_in_array(val models.Comment, comments []models.Comment) (idComment int) {
+	idComment = -1
+	for i, comment := range comments {
+		if comment.Id == val.Id {
+			idComment = i
 			return
 		}
 	}

@@ -32,3 +32,5 @@ logs.txt
 /.idea/go-glpi-to-matt.iml
 *.conf
 
+go-glpi-to-matt
+id.id

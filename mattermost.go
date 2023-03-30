@@ -172,6 +172,13 @@ func sendChangeToMattermost(channel *MattermostChannelConf, ticket models.Ticket
 	}
 	return createdPost.Id, nil
 }
+func updatePost(postId string, message string) error {
+	_, err := MattermostModel.UpdatePost(postId, message)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func updateTicketInMattermost(postId string, ticket models.Ticket) error {
 
 	message := MattermostPostMsgTextFromTicket(ticket)

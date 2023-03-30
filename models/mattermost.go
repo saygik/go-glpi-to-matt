@@ -35,6 +35,16 @@ func (m MattermostModel) UpdatePostWithAttachtent(
 	}
 	return createdPost, nil
 }
+func (m MattermostModel) UpdatePost(
+	postId, message string) (*mattermost.Post, error) {
+	msgProperties := mattermost.MsgProperties{}
+	createdPost, _, err := client.UpdatePostWithAttachtent(postId, message, msgProperties)
+	if err != nil {
+		return nil, err
+	}
+	return createdPost, nil
+}
+
 func (m MattermostModel) CreateSimplePost(channelID, message, rootId string) (*mattermost.Post, error) {
 
 	createdPost, _, err := client.CreateSimpleMessagePost(channelID, message, rootId)

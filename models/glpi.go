@@ -22,12 +22,15 @@ type Ticket struct {
 	Org            string `db:"org" json:"org"`
 	CommentsCount  string `db:"comments_count" json:"comments_count"`
 	SolutionsCount string `db:"solutions_count" json:"solutions_count"`
+	Comments       []Comment
+	Solutions      []Comment
 }
 type Comment struct {
 	Id      string `db:"id" json:"id"`
 	Content string `db:"content" json:"content"`
 	DateMod string `db:"date_mod" json:"date_mod"`
 	Author  string `db:"author" json:"author"`
+	PostId  string `db:"post-id" json:"post-id"`
 }
 
 // GLPIModel ...
