@@ -99,7 +99,8 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 					"\n `Автор:` " + ticket.Author +
 					"\n `Статус:` " + ticket.Status +
 					"\n" +
-					"\n Дата возникновения: " + ticket.Date,
+					"\n Дата возникновения: " + ticket.Date +
+					"\n Дата устранения (решения): " + ticket.SolveDate,
 				Footer:   fmt.Sprintf(`Зарегистрировано: %s , ID: %s `, ticket.DateCreation, ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,
@@ -124,7 +125,8 @@ func MattermostPostMsgPropertieFromChange(ticket models.Ticket) (mattermost.MsgP
 					"\n `Автор:` " + ticket.Author +
 					"\n `Статус:` " + ticket.Status +
 					"\n" +
-					"\n Дата возникновения: " + ticket.Date,
+					"\n Дата возникновения: " + ticket.Date +
+					"\n Дата устранения (решения): " + ticket.SolveDate,
 				Footer:   fmt.Sprintf(`Зарегистрировано: %s , ID: %s `, ticket.DateCreation, ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,

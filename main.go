@@ -185,6 +185,7 @@ func enumeratePostsFromFilesChanges(posts []MattermostPost, dir string) error {
 					post.Ticket.Impact != ticket.Impact ||
 					newSolutionsCount != oldSolutionsCount ||
 					post.Ticket.DateMod != ticket.DateMod ||
+					post.Ticket.SolveDate != ticket.SolveDate ||
 					newCommentsCount != oldCommentsCount {
 					ticket.CommentsCount = strconv.Itoa(newCommentsCount)
 					err := updateChangeInMattermost(post.Id, ticket)
@@ -307,6 +308,7 @@ func enumeratePostsFromFiles(posts []MattermostPost, dir string) error {
 					post.Ticket.Name != ticket.Name ||
 					post.Ticket.Content != ticket.Content ||
 					post.Ticket.Impact != ticket.Impact ||
+					post.Ticket.SolveDate != ticket.SolveDate ||
 					post.Ticket.DateMod != ticket.DateMod ||
 					commentsUpdated ||
 					solutionsUpdated {

@@ -16,6 +16,7 @@ type Ticket struct {
 	Date           string `db:"date" json:"date"`
 	DateMod        string `db:"date_mod" json:"date_mod"`
 	DateCreation   string `db:"date_creation" json:"date_creation"`
+	SolveDate      string `db:"solvedate" json:"solvedate"`
 	Name           string `db:"name" json:"name"`
 	Content        string `db:"content" json:"content"`
 	Author         string `db:"author" json:"author"`
@@ -74,7 +75,7 @@ func (m GLPIModel) OneTicket(ticketID string) (ticket Ticket, err error) {
                                 glpi_tickets.status as status_id,
                                 (SELECT count(id) from glpi_itilfollowups WHERE itemtype="Ticket" and items_id=%s) as comments_count,
                                 (SELECT count(id) from glpi_itilsolutions WHERE itemtype="Ticket" and items_id=%s) as solutions_count,
-								glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, IFNULL(glpi_tickets.date,'') as date, glpi_tickets.date_mod, glpi_tickets.date_creation FROM glpi_tickets 
+								glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, IFNULL(glpi_tickets.date,'') as date, glpi_tickets.date_mod, glpi_tickets.date_creation, IFNULL(glpi_tickets.solvedate,'') as solvedate FROM glpi_tickets 
 								LEFT JOIN glpi_entities ON glpi_tickets.entities_id = glpi_entities.id
 							    LEFT JOIN glpi_users ON glpi_tickets.users_id_recipient=glpi_users.id
 								LEFT JOIN glpi_plugin_fields_ticketfailures ON glpi_plugin_fields_ticketfailures.items_id=glpi_tickets.id
@@ -107,7 +108,7 @@ func (m GLPIModel) OneChange(ticketID string) (ticket Ticket, err error) {
                                 glpi_changes.status as status_id,
                                 (SELECT count(id) from glpi_itilfollowups WHERE itemtype="Change" and items_id=%s) as comments_count,
                                 (SELECT count(id) from glpi_itilsolutions WHERE itemtype="Change" and items_id=%s) as solutions_count,
-								glpi_changes.name, glpi_changes.impact, glpi_entities.completename as org, IFNULL(glpi_changes.date,'') as date, glpi_changes.date_mod, glpi_changes.date_creation,
+								glpi_changes.name, glpi_changes.impact, glpi_entities.completename as org, IFNULL(glpi_changes.date,'') as date, glpi_changes.date_mod, glpi_changes.date_creation, IFNULL(glpi_changes.solvedate,'') as solvedate,
 								(SELECT ifnull(GROUP_CONCAT(glpi_softwares.name SEPARATOR ", "), "") from glpi_changes_items 
 								LEFT JOIN glpi_softwares ON glpi_softwares.id=glpi_changes_items.items_id
 								WHERE itemtype= "Software" AND changes_id=glpi_changes.id) AS kat
@@ -132,13 +133,13 @@ func (m GLPIModel) Tickets(lastId int) (tickets []Ticket, err error) {
 									ELSE "неизвестен"
 								END AS status,
                                 glpi_tickets.status as status_id,
-								glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, IFNULL(glpi_tickets.date,'') as date, glpi_tickets.date_mod, glpi_tickets.date_creation FROM glpi_tickets 
+								glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, IFNULL(glpi_tickets.date,'') as date, glpi_tickets.date_mod, glpi_tickets.date_creation, IFNULL(glpi_tickets.solvedate,'') as solvedate FROM glpi_tickets 
 								LEFT JOIN glpi_entities ON glpi_tickets.entities_id = glpi_entities.id
 							    LEFT JOIN glpi_users ON glpi_tickets.users_id_recipient=glpi_users.id
 								LEFT JOIN glpi_plugin_fields_ticketfailures ON glpi_plugin_fields_ticketfailures.items_id=glpi_tickets.id
 								LEFT JOIN glpi_plugin_fields_failcategoryfielddropdowns ON glpi_plugin_fields_failcategoryfielddropdowns.id=glpi_plugin_fields_ticketfailures.plugin_fields_failcategoryfielddropdowns_id
 								WHERE glpi_tickets.is_deleted<>TRUE  AND glpi_plugin_fields_failcategoryfielddropdowns.id>4 
-                     		    AND LOWER(glpi_tickets.name) not like '%%2222%%' AND LOWER(glpi_tickets.name) not like '%%3333%%' 
+                     		    AND LOWER(glpi_tickets.name) not like '%%тест%%' AND LOWER(glpi_tickets.name) not like '%%test%%' 
                                 AND glpi_tickets.id>%d limit 10`, lastId)
 	_, err = db.GetDB().Select(&tickets, proc)
 
@@ -170,7 +171,7 @@ func (m GLPIModel) Changes(lastId int) (tickets []Ticket, err error) {
 	 ELSE "Не определено"  
 END AS status,
 	glpi_changes.status as status_id,
-	glpi_changes.name, glpi_changes.impact, glpi_entities.completename as org, IFNULL(glpi_changes.date,'') as date, glpi_changes.date_mod, glpi_changes.date_creation,
+	glpi_changes.name, glpi_changes.impact, glpi_entities.completename as org, IFNULL(glpi_changes.date,'') as date, glpi_changes.date_mod, glpi_changes.date_creation, IFNULL(glpi_changes.solvedate,'') as solvedate,
 	(SELECT ifnull(GROUP_CONCAT(glpi_softwares.name SEPARATOR ", "), "") from glpi_changes_items 
     LEFT JOIN glpi_softwares ON glpi_softwares.id=glpi_changes_items.items_id
     WHERE itemtype= "Software" AND changes_id=glpi_changes.id) AS kat
@@ -178,7 +179,7 @@ END AS status,
 	LEFT JOIN glpi_entities ON glpi_changes.entities_id = glpi_entities.id
 	LEFT JOIN glpi_users ON glpi_changes.users_id_recipient=glpi_users.id
 	WHERE glpi_changes.is_deleted<>TRUE  
-    AND LOWER(glpi_changes.name) not like '%%2222%%' AND LOWER(glpi_changes.name) not like '%%test%%' 
+    AND LOWER(glpi_changes.name) not like '%%тест%%' AND LOWER(glpi_changes.name) not like '%%test%%' 
     AND glpi_changes.id>%d limit 10`, lastId)
 	_, err = db.GetDB().Select(&tickets, proc)
 
