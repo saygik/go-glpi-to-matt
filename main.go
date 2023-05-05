@@ -393,6 +393,7 @@ func enumerateTicketsFromID(id int, ticketsDir string) error {
 				savePostToFile(ticketsDir+channel.Key+"-"+ticket.Id+".conf", post)
 			}
 		}
+		GLPIModel.AddOtkaz(ticket.Id)
 	}
 
 	lastTicketId, err := strconv.Atoi(tickets[len(tickets)-1].Id)

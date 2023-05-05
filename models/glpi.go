@@ -139,8 +139,9 @@ func (m GLPIModel) Tickets(lastId int) (tickets []Ticket, err error) {
 								LEFT JOIN glpi_plugin_fields_ticketfailures ON glpi_plugin_fields_ticketfailures.items_id=glpi_tickets.id
 								LEFT JOIN glpi_plugin_fields_failcategoryfielddropdowns ON glpi_plugin_fields_failcategoryfielddropdowns.id=glpi_plugin_fields_ticketfailures.plugin_fields_failcategoryfielddropdowns_id
 								WHERE glpi_tickets.is_deleted<>TRUE  AND glpi_plugin_fields_failcategoryfielddropdowns.id>4 
-                     		    AND LOWER(glpi_tickets.name) not like '%%тест%%' AND LOWER(glpi_tickets.name) not like '%%test%%' 
-                                AND glpi_tickets.id>%d limit 10`, lastId)
+                     		    AND LOWER(glpi_tickets.name) not like '%%222%%' AND LOWER(glpi_tickets.name) not like '%%test%%' 
+								 AND glpi_tickets.id NOT IN (SELECT tickets_id AS id from glpi_tickets_otkaz) limit 10`)
+	//                                AND glpi_tickets.id>%d limit 10`, lastId)
 	_, err = db.GetDB().Select(&tickets, proc)
 
 	//rows, err := GetDB().Query("SELECT glpi_tickets.id, glpi_tickets.name FROM glpi_tickets")
@@ -150,6 +151,12 @@ func (m GLPIModel) Tickets(lastId int) (tickets []Ticket, err error) {
 
 	//	_, err = db.GetDB().Select(&tickets, "SELECT glpi_tickets.id, glpi_tickets.name, glpi_tickets.date, glpi_tickets.closedate, glpi_tickets.solvedate, glpi_tickets.date_mod, glpi_tickets.`status` FROM glpi_tickets ")
 	return tickets, nil
+}
+
+func (m GLPIModel) AddOtkaz(id string) (err error) {
+	var proc = fmt.Sprintf(`INSERT INTO glpi_tickets_otkaz (tickets_id) VALUES (%s)`, id)
+	_, err = db.GetDB().Query(proc)
+	return err
 }
 
 func (m GLPIModel) Changes(lastId int) (tickets []Ticket, err error) {

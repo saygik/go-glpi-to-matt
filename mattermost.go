@@ -86,13 +86,18 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 	//	fields := []Field{{Short: "true", Title: "влияние", Value: "среднее"}, {Short: "true", Title: "статус", Value: ticket.Status}}
 	//	color := colorByStatus(ticket.Status)
 	mLevel := GetMessageLevelByStatus(ticket.Status)
+	ticketTitle := "ОТКАЗ: " + ticket.Name
+	if ticket.KatId == "0" || ticket.KatId == "-" {
+		ticketTitle = ticketTitle + " (категория отказа отозвана)"
+	}
 	//	fields := []mattermost.MsgAttachmentField{{Short: "false", Title: "Влияние", Value: ticket.Impact}, {Short: "false", Title: "Статус", Value: ticket.Status}}
 	msgProperties := mattermost.MsgProperties{
 		Attachments: []mattermost.MsgAttachment{
 			{
 				//				Author:    ticket.Org,
-				Color:     mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
-				Title:     "ОТКАЗ: " + ticket.Name,
+				Color: mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
+				Title: ticketTitle,
+
 				TitleLink: "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id,
 				Text: "`КАТЕГОРИЯ:` " + ticket.Kat +
 					"\n`ОПИСАНИЕ:` " + content +
