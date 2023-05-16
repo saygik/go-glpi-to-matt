@@ -18,9 +18,9 @@ func (m MattermostModel) Init() {
 	// channelID = os.Getenv("GLPI_TO_MATT_CHANNEL_ID")
 }
 func (m MattermostModel) CreatePostWithAttachtent(
-	channelID, message, rootId string, msgProperties mattermost.MsgProperties) (*mattermost.Post, error) {
+	channelID, message, rootId string, msgProperties mattermost.MsgProperties, msgMetadata mattermost.MsgMetadata) (*mattermost.Post, error) {
 	createdPost, _, err := client.CreatePostWithAttachtent(channelID, message, "",
-		msgProperties)
+		msgProperties, msgMetadata)
 	if err != nil {
 		return nil, err
 	}

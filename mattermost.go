@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"strconv"
+
 	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/JohannesKaufmann/html-to-markdown/plugin"
 	"github.com/saygik/go-glpi-to-matt/models"
@@ -145,6 +147,17 @@ func sendMessageToMattermost(channelID, message, rootId string) (postId string, 
 	}
 	return createdPost.Id, nil
 }
+func mattermostPriorityFromTicket(ticket models.Ticket) mattermost.MsgMetadata {
+	priority := "standart" //The priority filed should probably only accept the values of standard, important, and urgent (and blank).
+	kat, err := strconv.Atoi(ticket.KatId)
+	if err != nil {
+		return mattermost.MsgMetadata{Priority: mattermost.MsgPriority{Priority: priority, RequestedAck: true}}
+	}
+	if kat > 8 {
+		priority = "important"
+	}
+	return mattermost.MsgMetadata{Priority: mattermost.MsgPriority{Priority: priority, RequestedAck: true}}
+}
 func sendTicketToMattermost(channel *MattermostChannelConf, ticket models.Ticket) (postId string, err error) {
 
 	message := MattermostPostMsgTextFromTicket(ticket)
@@ -153,7 +166,8 @@ func sendTicketToMattermost(channel *MattermostChannelConf, ticket models.Ticket
 		msgProperties = mattermost.MsgProperties{}
 	}
 
-	createdPost, err := MattermostModel.CreatePostWithAttachtent(channel.Key, message, "", msgProperties)
+	msgMetadata := mattermostPriorityFromTicket(ticket)
+	createdPost, err := MattermostModel.CreatePostWithAttachtent(channel.Key, message, "", msgProperties, msgMetadata)
 	if err != nil {
 		log.Warn("Error sending ticket " + ticket.Id + " to channel " + channel.Name + ":" + err.Error())
 	} else {
@@ -169,8 +183,10 @@ func sendChangeToMattermost(channel *MattermostChannelConf, ticket models.Ticket
 	if err != nil {
 		msgProperties = mattermost.MsgProperties{}
 	}
+	priority := "standart" //The priority filed should probably only accept the values of standard, important, and urgent (and blank).
+	msgMetadata := mattermost.MsgMetadata{Priority: mattermost.MsgPriority{Priority: priority, RequestedAck: true}}
 
-	createdPost, err := MattermostModel.CreatePostWithAttachtent(channel.Key, message, "", msgProperties)
+	createdPost, err := MattermostModel.CreatePostWithAttachtent(channel.Key, message, "", msgProperties, msgMetadata)
 	if err != nil {
 		log.Warn("Error sending ticket " + ticket.Id + " to channel " + channel.Name + ":" + err.Error())
 	} else {
