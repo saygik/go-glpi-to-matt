@@ -26,6 +26,7 @@
 # SENSITVE DATA #
 .gitconfig
 .env
+.env.old
 cert/
 logs.txt
 *.id
@@ -35,3 +36,4 @@ logs.txt
 go-glpi-to-matt
 id.id
 channels.json
+models/glpi.go

@@ -141,6 +141,7 @@ func MattermostPostMsgPropertieFromChange(ticket models.Ticket) (mattermost.MsgP
 	return msgProperties, nil
 }
 func sendMessageToMattermost(channelID, message, rootId string) (postId string, err error) {
+
 	createdPost, err := MattermostModel.CreateSimplePost(channelID, message, rootId)
 	if err != nil {
 		return "", err
@@ -151,12 +152,12 @@ func mattermostPriorityFromTicket(ticket models.Ticket) mattermost.MsgMetadata {
 	priority := "standart" //The priority filed should probably only accept the values of standard, important, and urgent (and blank).
 	kat, err := strconv.Atoi(ticket.KatId)
 	if err != nil {
-		return mattermost.MsgMetadata{Priority: mattermost.MsgPriority{Priority: priority, RequestedAck: true}}
+		return mattermost.MsgMetadata{Priority: mattermost.MsgPriority{Priority: priority, RequestedAck: false}}
 	}
 	if kat > 8 {
 		priority = "important"
 	}
-	return mattermost.MsgMetadata{Priority: mattermost.MsgPriority{Priority: priority, RequestedAck: true}}
+	return mattermost.MsgMetadata{Priority: mattermost.MsgPriority{Priority: priority, RequestedAck: false}}
 }
 func sendTicketToMattermost(channel *MattermostChannelConf, ticket models.Ticket) (postId string, err error) {
 
@@ -184,7 +185,7 @@ func sendChangeToMattermost(channel *MattermostChannelConf, ticket models.Ticket
 		msgProperties = mattermost.MsgProperties{}
 	}
 	priority := "standart" //The priority filed should probably only accept the values of standard, important, and urgent (and blank).
-	msgMetadata := mattermost.MsgMetadata{Priority: mattermost.MsgPriority{Priority: priority, RequestedAck: true}}
+	msgMetadata := mattermost.MsgMetadata{Priority: mattermost.MsgPriority{Priority: priority, RequestedAck: false}}
 
 	createdPost, err := MattermostModel.CreatePostWithAttachtent(channel.Key, message, "", msgProperties, msgMetadata)
 	if err != nil {
