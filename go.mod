@@ -9,7 +9,7 @@ require (
 	github.com/go-gorp/gorp v2.2.0+incompatible
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/joho/godotenv v1.5.1
-	github.com/saygik/mattermost v0.0.0-20230829115354-8298a23c31a1
+	github.com/saygik/mattermost v0.0.0-20241022071743-35528fed1fea
 	github.com/sirupsen/logrus v1.9.3
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
 )
