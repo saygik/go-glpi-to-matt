@@ -20,6 +20,7 @@ type Ticket struct {
 	Name           string `db:"name" json:"name"`
 	Content        string `db:"content" json:"content"`
 	Author         string `db:"author" json:"author"`
+	AuthorName     string `db:"author_name" json:"author_name"`
 	Org            string `db:"org" json:"org"`
 	CommentsCount  string `db:"comments_count" json:"comments_count"`
 	SolutionsCount string `db:"solutions_count" json:"solutions_count"`
@@ -66,6 +67,7 @@ func (m GLPIModel) TicketSolutions(ticketID string, lastId int, itemtype string)
 func (m GLPIModel) OneTicket(ticketID string) (ticket Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_tickets.id , glpi_tickets.content,
                                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), 'не опреденен'),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
+								 	NULLIF(glpi_users.name, '') AS author_name,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.id,0) AS katid,
 								CASE glpi_tickets.status
@@ -126,6 +128,7 @@ func (m GLPIModel) OneChange(ticketID string) (ticket Ticket, err error) {
 func (m GLPIModel) Tickets(lastId int) (tickets []Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_tickets.id , glpi_tickets.content,
                                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), 'не опреденен'),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
+								 	NULLIF(glpi_users.name, '') AS author_name,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.id,0) AS katid,
 								CASE glpi_tickets.status
@@ -151,6 +154,41 @@ func (m GLPIModel) Tickets(lastId int) (tickets []Ticket, err error) {
 
 	//	_, err = db.GetDB().Select(&tickets, "SELECT glpi_tickets.id, glpi_tickets.name, glpi_tickets.date, glpi_tickets.closedate, glpi_tickets.solvedate, glpi_tickets.date_mod, glpi_tickets.`status` FROM glpi_tickets ")
 	return tickets, nil
+}
+
+func (m GLPIModel) TicketsTest() (tickets []Ticket, err error) {
+	var proc = `SELECT glpi_tickets.id , glpi_tickets.content,
+                CONCAT(ifnull(NULLIF(glpi_users.realname, ''), 'не опреденен'),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
+				 	NULLIF(glpi_users.name, '') AS author_name,
+				ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
+				ifnull(glpi_plugin_fields_failcategoryfielddropdowns.id,0) AS katid,
+				CASE glpi_tickets.status
+					WHEN 1 THEN "новый" WHEN 2 THEN "в работе (назначен)" WHEN 3 THEN "в работе (запланирован)" WHEN 4 THEN "ожидающий" WHEN 5 THEN "решен" WHEN 6 THEN "закрыт"
+					ELSE "неизвестен"
+				END AS status,
+                glpi_tickets.status as status_id,
+				glpi_tickets.name, glpi_tickets.impact, glpi_entities.completename as org, IFNULL(glpi_tickets.date,'') as date, glpi_tickets.date_mod, glpi_tickets.date_creation, IFNULL(glpi_tickets.solvedate,'') as solvedate FROM glpi_tickets
+				LEFT JOIN glpi_entities ON glpi_tickets.entities_id = glpi_entities.id
+			    LEFT JOIN glpi_users ON glpi_tickets.users_id_recipient=glpi_users.id
+				LEFT JOIN glpi_plugin_fields_ticketfailures ON glpi_plugin_fields_ticketfailures.items_id=glpi_tickets.id
+				LEFT JOIN glpi_plugin_fields_failcategoryfielddropdowns ON glpi_plugin_fields_failcategoryfielddropdowns.id=glpi_plugin_fields_ticketfailures.plugin_fields_failcategoryfielddropdowns_id
+				WHERE glpi_tickets.is_deleted<>TRUE  AND glpi_plugin_fields_failcategoryfielddropdowns.id>4
+        	    AND glpi_tickets.id NOT IN (SELECT tickets_id AS id from glpi_tickets_otkaz_dev) limit 10`
+	_, err = db.GetDB().Select(&tickets, proc)
+
+	//rows, err := GetDB().Query("SELECT glpi_tickets.id, glpi_tickets.name FROM glpi_tickets")
+	if err != nil {
+		return nil, err
+	}
+
+	//	_, err = db.GetDB().Select(&tickets, "SELECT glpi_tickets.id, glpi_tickets.name, glpi_tickets.date, glpi_tickets.closedate, glpi_tickets.solvedate, glpi_tickets.date_mod, glpi_tickets.`status` FROM glpi_tickets ")
+	return tickets, nil
+}
+
+func (m GLPIModel) AddOtkazTest(id string) (err error) {
+	var proc = fmt.Sprintf(`INSERT INTO glpi_tickets_otkaz_dev (tickets_id) VALUES (%s)`, id)
+	_, err = db.GetDB().Query(proc)
+	return err
 }
 
 func (m GLPIModel) AddOtkaz(id string) (err error) {

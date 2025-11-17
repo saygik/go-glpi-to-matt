@@ -52,17 +52,11 @@ func main() {
 	customFormatter.FullTimestamp = true
 	log.Formatter = customFormatter
 	//	log.Info("-")
-	lastid, err := os.ReadFile("id.id")
-	if err != nil {
-		log.Warn("Error loading id.id file or wrong file, please create one in the root directory: " + err.Error())
-		lastid = []byte("0")
-	}
-	id, _ := strconv.Atoi(string(lastid))
-	fmt.Printf("Last ticket number is %d", id)
+
 	lastChangeId, err := os.ReadFile("id-changes.id")
 	if err != nil {
 		log.Warn("Error loading idc.id file or wrong file, please create one in the root directory: " + err.Error())
-		lastid = []byte("0")
+		lastChangeId = []byte("0")
 	}
 	idc, _ := strconv.Atoi(string(lastChangeId))
 	fmt.Printf("Last ticket number is %d", idc)
@@ -80,7 +74,7 @@ func main() {
 	ticketsDir := fmt.Sprintf("%s/tickets/", exPath)
 	changesDir := fmt.Sprintf("%s/changes/", exPath)
 
-	enumerateTicketsFromID(id, ticketsDir)
+	enumerateTicketsFromID(ticketsDir)
 	enumerateChangesFromID(idc, changesDir)
 
 	posts, err := enumeratePostsFiles(ticketsDir)
@@ -360,8 +354,11 @@ func enumerateChangesFromID(id int, ChangesDir string) error {
 	}
 	return nil
 }
-func enumerateTicketsFromID(id int, ticketsDir string) error {
-	tickets, err := GLPIModel.Tickets(id)
+func enumerateTicketsFromID(ticketsDir string) error {
+	//	tickets, err := GLPIModel.TicketsTest()
+	//* Только для тестирования
+	tickets, err := GLPIModel.TicketsTest()
+	//**
 	if err != nil {
 		log.Fatal("Error selecting tickets from db: " + err.Error())
 	}
@@ -393,7 +390,11 @@ func enumerateTicketsFromID(id int, ticketsDir string) error {
 				savePostToFile(ticketsDir+channel.Key+"-"+ticket.Id+".conf", post)
 			}
 		}
-		GLPIModel.AddOtkaz(ticket.Id)
+		//GLPIModel.AddOtkaz(ticket.Id)
+		//* Только для тестирования
+		GLPIModel.AddOtkazTest(ticket.Id)
+		//**
+
 	}
 
 	lastTicketId, err := strconv.Atoi(tickets[len(tickets)-1].Id)
