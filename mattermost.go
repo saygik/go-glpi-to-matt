@@ -3,6 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
 
 	"strconv"
 
@@ -65,7 +68,11 @@ func savePostToFile(filename string, post MattermostPost) error {
 }
 
 func MattermostPostMsgTextFromTicket(ticket models.Ticket) string {
-	message := "**" + ticket.Org + "**\n" + ticket.DateMod
+	content := ConvertToMarkdown(ticket.Content)
+	content = strings.ReplaceAll(content, "\n", "\n>")
+	message := "**[" + ticket.Name + "](https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id + ")**\n" +
+		"  >" + content
+
 	return message
 }
 func ConvertToMarkdown(text string) string {
@@ -84,9 +91,18 @@ func ConvertToMarkdown(text string) string {
 }
 
 func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgProperties, error) {
-	content := ConvertToMarkdown(ticket.Content)
+	//content := ConvertToMarkdown(ticket.Content)
 	//	fields := []Field{{Short: "true", Title: "влияние", Value: "среднее"}, {Short: "true", Title: "статус", Value: ticket.Status}}
 	//	color := colorByStatus(ticket.Status)
+	user, usererr := getAduser(ticket.AuthorName)
+	userProps := ""
+	if usererr == nil {
+		userProps = fmt.Sprintf(`(%s %s)`, user.Title, user.Department)
+		if len(userProps) < 6 {
+			userProps = ""
+		}
+	}
+
 	mLevel := GetMessageLevelByStatus(ticket.Status)
 	ticketTitle := "ОТКАЗ: " + ticket.Name
 	if ticket.KatId == "0" || ticket.KatId == "-" {
@@ -98,17 +114,18 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 			{
 				//				Author:    ticket.Org,
 				Color: mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
-				Title: ticketTitle,
+				//Title: ticketTitle,
 
 				TitleLink: "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id,
-				Text: "`КАТЕГОРИЯ:` " + ticket.Kat +
-					"\n`ОПИСАНИЕ:` " + content +
-					"\n `Автор:` " + ticket.Author +
-					"\n `Статус:` " + ticket.Status +
+				Text: "**" + ticket.Org + "**" +
+					"\n:exclamation: `Категория          :` `" + ticket.Kat + "`" +
+					"\n:heavy_check_mark: `Статус             :` `" + ticket.Status + "`" +
+					"\n:male-mechanic: `Автор              :` `" + ticket.Author + " " + userProps + "`" +
 					"\n" +
-					"\n Дата возникновения: " + ticket.Date +
-					"\n Дата устранения (решения): " + ticket.SolveDate,
-				Footer:   fmt.Sprintf(`Зарегистрировано: %s , ID: %s `, ticket.DateCreation, ticket.Id),
+					"\n:clock1: `Дата регистрации   :` `" + ticket.DateCreation + "`" +
+					"\n.      `-    возникновения :` `" + ticket.Date + "`" +
+					"\n.      `-    устранения    :` `" + ticket.SolveDate + "`",
+				Footer:   fmt.Sprintf(`Изменено: %s , ID: %s `, ticket.DateMod, ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,
 			}}}
@@ -196,6 +213,7 @@ func sendChangeToMattermost(channel *MattermostChannelConf, ticket models.Ticket
 	}
 	return createdPost.Id, nil
 }
+
 func updatePost(postId string, message string) error {
 	_, err := MattermostModel.UpdatePost(postId, message)
 	if err != nil {
@@ -228,4 +246,34 @@ func updateChangeInMattermost(postId string, ticket models.Ticket) error {
 		return err
 	}
 	return nil
+}
+
+type User struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	Company    string `json:"company"`
+	Department string `json:"department"`
+	Title      string `json:"title"`
+	Mail       string `json:"mail"`
+	Telephone  string `json:"telephone"`
+}
+
+func getAduser(upn string) (*User, error) {
+	url := "https://userinfoapi.brnv.rw/api/ad/finduser/" + upn
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var user User
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
