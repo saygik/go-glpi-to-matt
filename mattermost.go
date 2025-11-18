@@ -93,7 +93,7 @@ func ConvertToMarkdown(text string) string {
 func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgProperties, error) {
 	//content := ConvertToMarkdown(ticket.Content)
 	//	fields := []Field{{Short: "true", Title: "влияние", Value: "среднее"}, {Short: "true", Title: "статус", Value: ticket.Status}}
-	//	color := colorByStatus(ticket.Status)
+	//color := colorByStatus(ticket.Status)
 	user, usererr := getAduser(ticket.AuthorName)
 	userProps := ""
 	if usererr == nil {
@@ -119,7 +119,7 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 				TitleLink: "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id,
 				Text: "**" + ticket.Org + "**" +
 					"\n:list: `Категория          :` `" + ticket.Kat + "`" +
-					"\n:dot: `Статус             :` `" + ticket.Status + "`" +
+					"\n" + GetIconByStatus(ticket.Status) + " `Статус             :` `" + ticket.Status + "`" +
 					"\n:user: `Автор              :` `" + ticket.Author + " " + userProps + "`" +
 					"\n" +
 					"\n:clock-g: `Дата регистрации   :` `" + ticket.DateCreation + "`" +
@@ -132,9 +132,17 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 	return msgProperties, nil
 }
 func MattermostPostMsgPropertieFromChange(ticket models.Ticket) (mattermost.MsgProperties, error) {
-	content := ConvertToMarkdown(ticket.Content)
+	//content := ConvertToMarkdown(ticket.Content)
 	//	fields := []Field{{Short: "true", Title: "влияние", Value: "среднее"}, {Short: "true", Title: "статус", Value: ticket.Status}}
 	//	color := colorByStatus(ticket.Status)
+	user, usererr := getAduser(ticket.AuthorName)
+	userProps := ""
+	if usererr == nil {
+		userProps = fmt.Sprintf(`(%s %s)`, user.Title, user.Department)
+		if len(userProps) < 6 {
+			userProps = ""
+		}
+	}
 	mLevel := GetMessageLevelByStatus(ticket.Status)
 	//	fields := []mattermost.MsgAttachmentField{{Short: "false", Title: "Влияние", Value: ticket.Impact}, {Short: "false", Title: "Статус", Value: ticket.Status}}
 	msgProperties := mattermost.MsgProperties{
@@ -142,16 +150,15 @@ func MattermostPostMsgPropertieFromChange(ticket models.Ticket) (mattermost.MsgP
 			{
 				//				Author:    ticket.Org,
 				Color:     mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
-				Title:     "Работы: " + ticket.Name,
 				TitleLink: "https://support.rw/front/change.form.php?id=" + ticket.Id,
-				Text: "`СИСТЕМА:` " + ticket.Kat +
-					"\n`ОПИСАНИЕ:` " + content +
-					"\n `Автор:` " + ticket.Author +
-					"\n `Статус:` " + ticket.Status +
+				Text: ":soft: `Система             :` `" + ticket.Kat + "`" +
+					"\n" + GetIconByStatus(ticket.Status) + " `Статус              :` `" + ticket.Status + "`" +
+					"\n:user: `Автор               :` `" + ticket.Author + " " + userProps + "`" +
 					"\n" +
-					"\n Дата возникновения: " + ticket.Date +
-					"\n Дата устранения (решения): " + ticket.SolveDate,
-				Footer:   fmt.Sprintf(`Зарегистрировано: %s , ID: %s `, ticket.DateCreation, ticket.Id),
+					"\n:clock-g: `Дата регистрации    :` `" + ticket.DateCreation + "`" +
+					"\n:clock-r: `.    начало работ   :` `" + ticket.Date + "`" +
+					"\n:clock-m: `.    окончание работ:` `" + ticket.SolveDate + "`",
+				Footer:   fmt.Sprintf(`Изменено: %s , ID: %s `, ticket.DateMod, ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,
 			}}}

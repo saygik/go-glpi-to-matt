@@ -58,6 +58,10 @@ const (
 	statusSuccess  = "success"
 	statusWarning  = "warning"
 )
+const (
+	iconComplate = ":ok3:"
+	iconWorking  = ":dot:"
+)
 
 func GetMessageLevelByStatus(status string) string {
 	var color = map[string]string{
@@ -82,4 +86,19 @@ func GetMessageLevelByStatus(status string) string {
 	}
 
 	return statusInfo
+}
+
+func GetIconByStatus(status string) string {
+	var ico = map[string]string{
+		"решен":     iconComplate,
+		"применено": iconComplate,
+		"закрыт":    iconComplate,
+		"закрыта":   iconComplate,
+	}
+
+	if c, found := ico[status]; found {
+		return c
+	}
+
+	return iconWorking
 }

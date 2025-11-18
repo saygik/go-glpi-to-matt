@@ -92,6 +92,7 @@ func (m GLPIModel) OneTicket(ticketID string) (ticket Ticket, err error) {
 func (m GLPIModel) OneChange(ticketID string) (ticket Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_changes.id , glpi_changes.content,
                                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), 'не опреденен'),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
+																 	NULLIF(glpi_users.name, '') AS author_name,
 								0 AS katid,
 								CASE glpi_changes.status
    										WHEN 1 THEN "новый"
@@ -200,6 +201,7 @@ func (m GLPIModel) AddOtkaz(id string) (err error) {
 func (m GLPIModel) Changes(lastId int) (tickets []Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_changes.id , glpi_changes.content,
 	TRIM(CONCAT(ifnull(NULLIF(glpi_users.realname, ''), ''),' ', ifnull(NULLIF(glpi_users.firstname, ''),''))) AS author,
+								 	NULLIF(glpi_users.name, '') AS author_name,
 	0 AS katid,
 	 CASE glpi_changes.status
 	 WHEN 1 THEN "новый"
