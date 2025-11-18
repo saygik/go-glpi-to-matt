@@ -118,13 +118,13 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 
 				TitleLink: "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id,
 				Text: "**" + ticket.Org + "**" +
-					"\n:exclamation: `Категория          :` `" + ticket.Kat + "`" +
-					"\n:heavy_check_mark: `Статус             :` `" + ticket.Status + "`" +
-					"\n:male-mechanic: `Автор              :` `" + ticket.Author + " " + userProps + "`" +
+					"\n:list: `Категория          :` `" + ticket.Kat + "`" +
+					"\n:dot: `Статус             :` `" + ticket.Status + "`" +
+					"\n:user: `Автор              :` `" + ticket.Author + " " + userProps + "`" +
 					"\n" +
-					"\n:clock1: `Дата регистрации   :` `" + ticket.DateCreation + "`" +
-					"\n.      `-    возникновения :` `" + ticket.Date + "`" +
-					"\n.      `-    устранения    :` `" + ticket.SolveDate + "`",
+					"\n:clock-g: `Дата регистрации   :` `" + ticket.DateCreation + "`" +
+					"\n:clock-r: `.    возникновения :` `" + ticket.Date + "`" +
+					"\n:clock-m: `.    устранения    :` `" + ticket.SolveDate + "`",
 				Footer:   fmt.Sprintf(`Изменено: %s , ID: %s `, ticket.DateMod, ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,
