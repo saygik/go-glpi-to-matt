@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/saygik/go-glpi-to-matt/db"
@@ -138,7 +139,10 @@ func enumeratePostsFromFilesChanges(posts []MattermostPost, dir string) error {
 					lastComment := 0
 					for _, comment := range comments {
 						content := ConvertToMarkdown(comment.Content)
-						sendMessageToMattermost(post.ChannelID, "**Комментарий работ** /*"+comment.Author+"*/: "+content, post.Id)
+						content = strings.ReplaceAll(content, "\n", "\n>")
+						userProps := getUserPropsInComments(comment.AuthorName)
+						commentText := "**:user: " + comment.Author + " " + userProps + "\n>" + content
+						sendMessageToMattermost(post.ChannelID, commentText, post.Id)
 						lastComment, _ = strconv.Atoi(comment.Id)
 					}
 					post.LastComment = lastComment
@@ -157,7 +161,10 @@ func enumeratePostsFromFilesChanges(posts []MattermostPost, dir string) error {
 					lastSolution := 0
 					for _, solution := range solutions {
 						content := ConvertToMarkdown(solution.Content)
-						sendMessageToMattermost(post.ChannelID, fmt.Sprintf("**Решение работ** /*"+solution.Author+"*/: "+content), post.Id)
+						content = strings.ReplaceAll(content, "\n", "\n>")
+						userProps := getUserPropsInComments(solution.AuthorName)
+						solutionText := "**Решение** \n:user: " + solution.Author + " " + userProps + "\n>" + content
+						sendMessageToMattermost(post.ChannelID, solutionText, post.Id)
 						lastSolution, _ = strconv.Atoi(solution.Id)
 					}
 					post.LastSolution = lastSolution
@@ -230,7 +237,9 @@ func enumeratePostsFromFiles(posts []MattermostPost, dir string) error {
 				if len(comments) > 0 {
 					for i, comment := range comments {
 						content := ConvertToMarkdown(comment.Content)
-						commentText := "**Комментарий в заявке** /*" + comment.Author + "*/: " + content
+						content = strings.ReplaceAll(content, "\n", "\n>")
+						userProps := getUserPropsInComments(comment.AuthorName)
+						commentText := ":user: " + comment.Author + " " + userProps + "\n>" + content
 						if num := comment_in_array(comment, post.Ticket.Comments); num > -1 {
 							if comment.DateMod != post.Ticket.Comments[num].DateMod {
 								commentsUpdated = true
@@ -262,7 +271,9 @@ func enumeratePostsFromFiles(posts []MattermostPost, dir string) error {
 				if len(solutions) > 0 {
 					for i, solution := range solutions {
 						content := ConvertToMarkdown(solution.Content)
-						solutionText := "**Решение заявки** /*" + solution.Author + "*/: " + content
+						content = strings.ReplaceAll(content, "\n", "\n>")
+						userProps := getUserPropsInComments(solution.AuthorName)
+						solutionText := "**Решение** \n:user: " + solution.Author + " " + userProps + "\n>" + content
 						if num := comment_in_array(solution, post.Ticket.Solutions); num > -1 {
 							if solution.DateMod != post.Ticket.Solutions[num].DateMod {
 								solutionsUpdated = true
@@ -325,7 +336,10 @@ func enumeratePostsFromFiles(posts []MattermostPost, dir string) error {
 }
 
 func enumerateChangesFromID(id int, ChangesDir string) error {
-	changes, err := GLPIModel.Changes(id)
+	//changes, err := GLPIModel.Changes(id)
+	//* Только для тестирования
+	changes, err := GLPIModel.ChangesTest(id)
+	//**
 	if err != nil {
 		log.Fatal("Error selecting tickets from db: " + err.Error())
 	}

@@ -28,11 +28,12 @@ type Ticket struct {
 	Solutions      []Comment
 }
 type Comment struct {
-	Id      string `db:"id" json:"id"`
-	Content string `db:"content" json:"content"`
-	DateMod string `db:"date_mod" json:"date_mod"`
-	Author  string `db:"author" json:"author"`
-	PostId  string `db:"post-id" json:"post-id"`
+	Id         string `db:"id" json:"id"`
+	Content    string `db:"content" json:"content"`
+	DateMod    string `db:"date_mod" json:"date_mod"`
+	Author     string `db:"author" json:"author"`
+	AuthorName string `db:"author_name" json:"author_name"`
+	PostId     string `db:"post-id" json:"post-id"`
 }
 
 // GLPIModel ...
@@ -42,6 +43,7 @@ type GetOneItemFromDb func(ticketID string) (ticket Ticket, err error)
 
 func (m GLPIModel) TicketComments(ticketID string, lastId int, itemtype string) (comments []Comment, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_itilfollowups.id,glpi_itilfollowups.content, glpi_itilfollowups.date_mod,
+	                        NULLIF(glpi_users.name, '') AS author_name,
                             CONCAT(realname," ", firstname) AS author  FROM glpi_itilfollowups
                             LEFT JOIN glpi_users ON glpi_itilfollowups.users_id= glpi_users.id
                             WHERE items_id=%s AND itemtype="%s" AND glpi_itilfollowups.id>%d ORDER BY glpi_itilfollowups.id`, ticketID, itemtype, lastId)
@@ -54,6 +56,7 @@ func (m GLPIModel) TicketComments(ticketID string, lastId int, itemtype string) 
 
 func (m GLPIModel) TicketSolutions(ticketID string, lastId int, itemtype string) (comments []Comment, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_itilsolutions.id,glpi_itilsolutions.content, glpi_itilsolutions.date_mod,
+	                        NULLIF(glpi_users.name, '') AS author_name,
                             CONCAT(realname," ", firstname) AS author  FROM glpi_itilsolutions
                             LEFT JOIN glpi_users ON glpi_itilsolutions.users_id= glpi_users.id
                             WHERE items_id=%s AND itemtype="%s" AND glpi_itilsolutions.id>%d ORDER BY glpi_itilsolutions.id`, ticketID, itemtype, lastId)
@@ -227,6 +230,46 @@ END AS status,
 	LEFT JOIN glpi_users ON glpi_changes.users_id_recipient=glpi_users.id
 	WHERE glpi_changes.is_deleted<>TRUE
     AND LOWER(glpi_changes.name) not like '%%тест%%' AND LOWER(glpi_changes.name) not like '%%test%%'
+    AND glpi_changes.id>%d limit 10`, lastId)
+	_, err = db.GetDB().Select(&tickets, proc)
+
+	//rows, err := GetDB().Query("SELECT glpi_tickets.id, glpi_tickets.name FROM glpi_tickets")
+	if err != nil {
+		return nil, err
+	}
+
+	//	_, err = db.GetDB().Select(&tickets, "SELECT glpi_tickets.id, glpi_tickets.name, glpi_tickets.date, glpi_tickets.closedate, glpi_tickets.solvedate, glpi_tickets.date_mod, glpi_tickets.`status` FROM glpi_tickets ")
+	return tickets, nil
+}
+
+func (m GLPIModel) ChangesTest(lastId int) (tickets []Ticket, err error) {
+	var proc = fmt.Sprintf(`SELECT glpi_changes.id , glpi_changes.content,
+	TRIM(CONCAT(ifnull(NULLIF(glpi_users.realname, ''), ''),' ', ifnull(NULLIF(glpi_users.firstname, ''),''))) AS author,
+								 	NULLIF(glpi_users.name, '') AS author_name,
+	0 AS katid,
+	 CASE glpi_changes.status
+	 WHEN 1 THEN "новый"
+	 WHEN 2 THEN "новый"
+	 WHEN 9 THEN "оценка"
+	 WHEN 10 THEN "согласование"
+	 WHEN 7 THEN "принята"
+	 WHEN 4 THEN "ожидающие"
+	 WHEN 11 THEN "тестирование"
+	 WHEN 12 THEN "уточнение"
+	 WHEN 5 THEN "применено"
+	 WHEN 8 THEN "рассмотрение"
+	 WHEN 6 THEN "закрыта"
+	 ELSE "Не определено"
+END AS status,
+	glpi_changes.status as status_id,
+	glpi_changes.name, glpi_changes.impact, glpi_entities.completename as org, IFNULL(glpi_changes.date,'') as date, glpi_changes.date_mod, glpi_changes.date_creation, IFNULL(glpi_changes.solvedate,'') as solvedate,
+	(SELECT ifnull(GROUP_CONCAT(glpi_softwares.name SEPARATOR ", "), "") from glpi_changes_items
+    LEFT JOIN glpi_softwares ON glpi_softwares.id=glpi_changes_items.items_id
+    WHERE itemtype= "Software" AND changes_id=glpi_changes.id) AS kat
+	FROM glpi_changes
+	LEFT JOIN glpi_entities ON glpi_changes.entities_id = glpi_entities.id
+	LEFT JOIN glpi_users ON glpi_changes.users_id_recipient=glpi_users.id
+	WHERE glpi_changes.is_deleted<>TRUE
     AND glpi_changes.id>%d limit 10`, lastId)
 	_, err = db.GetDB().Select(&tickets, proc)
 

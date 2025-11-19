@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -101,4 +102,16 @@ func GetIconByStatus(status string) string {
 	}
 
 	return iconWorking
+}
+
+func getUserPropsInComments(username string) string {
+	user, usererr := getAduser(username)
+	userProps := ""
+	if usererr == nil {
+		userProps = fmt.Sprintf(`(%s)`, user.Department)
+		if len(userProps) < 4 {
+			userProps = ""
+		}
+	}
+	return userProps
 }

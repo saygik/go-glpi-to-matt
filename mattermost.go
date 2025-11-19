@@ -67,10 +67,25 @@ func savePostToFile(filename string, post MattermostPost) error {
 	return saveToFile(filename, jsonMattermostPost)
 }
 
-func MattermostPostMsgTextFromTicket(ticket models.Ticket) string {
+func MattermostPostMsgTextFromTicket(ticket models.Ticket, isIssue bool) string {
+	ticketTitle := ""
+	link := ""
+	icon := ""
+	if isIssue {
+		icon = "###### :issue: "
+		link = "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id
+		ticketTitle = "ОТКАЗ: " + ticket.Name
+		if ticket.KatId == "0" || ticket.KatId == "-" {
+			ticketTitle = ticketTitle + " (категория отказа отозвана)"
+		}
+	} else {
+		icon = "###### :work: "
+		link = "https://support.rw/front/change.form.php?id=" + ticket.Id
+		ticketTitle = "РАБОТЫ: " + ticket.Name
+	}
 	content := ConvertToMarkdown(ticket.Content)
 	content = strings.ReplaceAll(content, "\n", "\n>")
-	message := "**[" + ticket.Name + "](https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id + ")**\n" +
+	message := icon + "**[" + ticketTitle + "](" + link + ")**\n" +
 		"  >" + content
 
 	return message
@@ -104,10 +119,7 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 	}
 
 	mLevel := GetMessageLevelByStatus(ticket.Status)
-	ticketTitle := "ОТКАЗ: " + ticket.Name
-	if ticket.KatId == "0" || ticket.KatId == "-" {
-		ticketTitle = ticketTitle + " (категория отказа отозвана)"
-	}
+
 	//	fields := []mattermost.MsgAttachmentField{{Short: "false", Title: "Влияние", Value: ticket.Impact}, {Short: "false", Title: "Статус", Value: ticket.Status}}
 	msgProperties := mattermost.MsgProperties{
 		Attachments: []mattermost.MsgAttachment{
@@ -185,7 +197,7 @@ func mattermostPriorityFromTicket(ticket models.Ticket) mattermost.MsgMetadata {
 }
 func sendTicketToMattermost(channel *MattermostChannelConf, ticket models.Ticket) (postId string, err error) {
 
-	message := MattermostPostMsgTextFromTicket(ticket)
+	message := MattermostPostMsgTextFromTicket(ticket, true)
 	msgProperties, err := MattermostPostMsgPropertieFromTicket(ticket)
 	if err != nil {
 		msgProperties = mattermost.MsgProperties{}
@@ -203,7 +215,7 @@ func sendTicketToMattermost(channel *MattermostChannelConf, ticket models.Ticket
 }
 func sendChangeToMattermost(channel *MattermostChannelConf, ticket models.Ticket) (postId string, err error) {
 
-	message := MattermostPostMsgTextFromTicket(ticket)
+	message := MattermostPostMsgTextFromTicket(ticket, false)
 	msgProperties, err := MattermostPostMsgPropertieFromChange(ticket)
 	if err != nil {
 		msgProperties = mattermost.MsgProperties{}
@@ -230,7 +242,7 @@ func updatePost(postId string, message string) error {
 }
 func updateTicketInMattermost(postId string, ticket models.Ticket) error {
 
-	message := MattermostPostMsgTextFromTicket(ticket)
+	message := MattermostPostMsgTextFromTicket(ticket, true)
 	msgProperties, err := MattermostPostMsgPropertieFromTicket(ticket)
 	if err != nil {
 		msgProperties = mattermost.MsgProperties{}
@@ -243,7 +255,7 @@ func updateTicketInMattermost(postId string, ticket models.Ticket) error {
 }
 func updateChangeInMattermost(postId string, ticket models.Ticket) error {
 
-	message := MattermostPostMsgTextFromTicket(ticket)
+	message := MattermostPostMsgTextFromTicket(ticket, false)
 	msgProperties, err := MattermostPostMsgPropertieFromChange(ticket)
 	if err != nil {
 		msgProperties = mattermost.MsgProperties{}
