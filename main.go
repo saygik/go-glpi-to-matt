@@ -141,7 +141,7 @@ func enumeratePostsFromFilesChanges(posts []MattermostPost, dir string) error {
 						content := ConvertToMarkdown(comment.Content)
 						content = strings.ReplaceAll(content, "\n", "\n>")
 						userProps := getUserPropsInComments(comment.AuthorName)
-						commentText := "**:user: " + comment.Author + " " + userProps + "\n>" + content
+						commentText := ":user: " + comment.Author + " " + userProps + "\n>" + content
 						sendMessageToMattermost(post.ChannelID, commentText, post.Id)
 						lastComment, _ = strconv.Atoi(comment.Id)
 					}
