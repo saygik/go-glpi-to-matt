@@ -173,7 +173,7 @@ func MattermostPostMsgPropertieFromChange(ticket models.Ticket) (mattermost.MsgP
 				Color:     mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
 				TitleLink: "https://support.rw/front/change.form.php?id=" + ticket.Id,
 				Text: ":soft: `Система        :` `" + ticket.Kat + "`" +
-					"\n" + GetIconByStatus(ticket.Status) + " `Статус        :` `" + ticket.Status + "`" +
+					"\n" + GetIconByStatus(ticket.Status) + " `Статус         :` `" + ticket.Status + "`" +
 					"\n:user: `Автор          :` `" + ticket.Author + " " + userProps + "`" +
 					"\n" +
 					"\n:clock-g: `регистрация    :` `" + parseGlpiDate(ticket.DateCreation) + "`" +
