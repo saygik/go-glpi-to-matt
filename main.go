@@ -336,9 +336,9 @@ func enumeratePostsFromFiles(posts []MattermostPost, dir string) error {
 }
 
 func enumerateChangesFromID(id int, ChangesDir string) error {
-	//changes, err := GLPIModel.Changes(id)
+	changes, err := GLPIModel.Changes(id)
 	//* Только для тестирования
-	changes, err := GLPIModel.ChangesTest(id)
+	//changes, err := GLPIModel.ChangesTest(id)
 	//**
 	if err != nil {
 		log.Fatal("Error selecting tickets from db: " + err.Error())
@@ -369,9 +369,9 @@ func enumerateChangesFromID(id int, ChangesDir string) error {
 	return nil
 }
 func enumerateTicketsFromID(ticketsDir string) error {
-	//	tickets, err := GLPIModel.TicketsTest()
+	tickets, err := GLPIModel.Tickets()
 	//* Только для тестирования
-	tickets, err := GLPIModel.TicketsTest()
+	//tickets, err := GLPIModel.TicketsTest()
 	//**
 	if err != nil {
 		log.Fatal("Error selecting tickets from db: " + err.Error())
@@ -404,9 +404,9 @@ func enumerateTicketsFromID(ticketsDir string) error {
 				savePostToFile(ticketsDir+channel.Key+"-"+ticket.Id+".conf", post)
 			}
 		}
-		//GLPIModel.AddOtkaz(ticket.Id)
+		GLPIModel.AddOtkaz(ticket.Id)
 		//* Только для тестирования
-		GLPIModel.AddOtkazTest(ticket.Id)
+		//GLPIModel.AddOtkazTest(ticket.Id)
 		//**
 
 	}

@@ -111,8 +111,13 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 	//color := colorByStatus(ticket.Status)
 	user, usererr := getAduser(ticket.AuthorName)
 	userProps := ""
+
 	if usererr == nil {
-		userProps = fmt.Sprintf(`(%s %s)`, user.Title, user.Department)
+		telephone := ""
+		if user.Telephone != "" {
+			telephone = fmt.Sprintf(`, тел.%s`, user.Telephone)
+		}
+		userProps = fmt.Sprintf(`(%s %s%s)`, user.Title, user.Department, telephone)
 		if len(userProps) < 6 {
 			userProps = ""
 		}
@@ -127,16 +132,15 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 				//				Author:    ticket.Org,
 				Color: mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
 				//Title: ticketTitle,
-
-				TitleLink: "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id,
+				//				TitleLink: "https://grafana.rw/d/MePJcn3nk/kartochka-otkaza?orgId=1&var-idz=" + ticket.Id,
 				Text: "**" + ticket.Org + "**" +
-					"\n:list: `Категория          :` `" + ticket.Kat + "`" +
-					"\n" + GetIconByStatus(ticket.Status) + " `Статус             :` `" + ticket.Status + "`" +
-					"\n:user: `Автор              :` `" + ticket.Author + " " + userProps + "`" +
+					"\n:list: `Категория    :` `" + ticket.Kat + "`" +
+					"\n" + GetIconByStatus(ticket.Status) + " `Статус       :` `" + ticket.Status + "`" +
+					"\n:user: `Автор        :` `" + ticket.Author + " " + userProps + "`" +
 					"\n" +
-					"\n:clock-g: `Дата регистрации   :` `" + ticket.DateCreation + "`" +
-					"\n:clock-r: `.    возникновения :` `" + ticket.Date + "`" +
-					"\n:clock-m: `.    устранения    :` `" + ticket.SolveDate + "`",
+					"\n:clock-g: `регистрация  :` `" + ticket.DateCreation + "`" +
+					"\n:clock-r: `возникновение:` `" + ticket.Date + "`" +
+					"\n:clock-m: `устранение   :` `" + ticket.SolveDate + "`",
 				Footer:   fmt.Sprintf(`Изменено: %s , ID: %s `, ticket.DateMod, ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,
@@ -150,7 +154,11 @@ func MattermostPostMsgPropertieFromChange(ticket models.Ticket) (mattermost.MsgP
 	user, usererr := getAduser(ticket.AuthorName)
 	userProps := ""
 	if usererr == nil {
-		userProps = fmt.Sprintf(`(%s %s)`, user.Title, user.Department)
+		telephone := ""
+		if user.Telephone != "" {
+			telephone = fmt.Sprintf(`, тел.%s`, user.Telephone)
+		}
+		userProps = fmt.Sprintf(`(%s %s%s)`, user.Title, user.Department, telephone)
 		if len(userProps) < 6 {
 			userProps = ""
 		}
@@ -163,13 +171,13 @@ func MattermostPostMsgPropertieFromChange(ticket models.Ticket) (mattermost.MsgP
 				//				Author:    ticket.Org,
 				Color:     mattermost.GetAttachmentColor(mLevel), //		"critical", "info", "success", "warning"
 				TitleLink: "https://support.rw/front/change.form.php?id=" + ticket.Id,
-				Text: ":soft: `Система             :` `" + ticket.Kat + "`" +
-					"\n" + GetIconByStatus(ticket.Status) + " `Статус              :` `" + ticket.Status + "`" +
-					"\n:user: `Автор               :` `" + ticket.Author + " " + userProps + "`" +
+				Text: ":soft: `Система        :` `" + ticket.Kat + "`" +
+					"\n" + GetIconByStatus(ticket.Status) + " `Статус        :` `" + ticket.Status + "`" +
+					"\n:user: `Автор          :` `" + ticket.Author + " " + userProps + "`" +
 					"\n" +
-					"\n:clock-g: `Дата регистрации    :` `" + ticket.DateCreation + "`" +
-					"\n:clock-r: `.    начало работ   :` `" + ticket.Date + "`" +
-					"\n:clock-m: `.    окончание работ:` `" + ticket.SolveDate + "`",
+					"\n:clock-g: `регистрация    :` `" + ticket.DateCreation + "`" +
+					"\n:clock-r: `начало работ   :` `" + ticket.Date + "`" +
+					"\n:clock-m: `окончание работ:` `" + ticket.SolveDate + "`",
 				Footer:   fmt.Sprintf(`Изменено: %s , ID: %s `, ticket.DateMod, ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,
