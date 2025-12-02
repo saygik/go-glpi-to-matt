@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"strconv"
 
@@ -138,10 +139,10 @@ func MattermostPostMsgPropertieFromTicket(ticket models.Ticket) (mattermost.MsgP
 					"\n" + GetIconByStatus(ticket.Status) + " `Статус       :` `" + ticket.Status + "`" +
 					"\n:user: `Автор        :` `" + ticket.Author + " " + userProps + "`" +
 					"\n" +
-					"\n:clock-g: `регистрация  :` `" + ticket.DateCreation + "`" +
-					"\n:clock-r: `возникновение:` `" + ticket.Date + "`" +
-					"\n:clock-m: `устранение   :` `" + ticket.SolveDate + "`",
-				Footer:   fmt.Sprintf(`Изменено: %s , ID: %s `, ticket.DateMod, ticket.Id),
+					"\n:clock-g: `регистрация  :` `" + parseGlpiDate(ticket.DateCreation) + "`" +
+					"\n:clock-r: `возникновение:` `" + parseGlpiDate(ticket.Date) + "`" +
+					"\n:clock-m: `устранение   :` `" + parseGlpiDate(ticket.SolveDate) + "`",
+				Footer:   fmt.Sprintf(`Изменено: %s , ID: %s `, parseGlpiDate(ticket.DateMod), ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,
 			}}}
@@ -175,10 +176,10 @@ func MattermostPostMsgPropertieFromChange(ticket models.Ticket) (mattermost.MsgP
 					"\n" + GetIconByStatus(ticket.Status) + " `Статус        :` `" + ticket.Status + "`" +
 					"\n:user: `Автор          :` `" + ticket.Author + " " + userProps + "`" +
 					"\n" +
-					"\n:clock-g: `регистрация    :` `" + ticket.DateCreation + "`" +
-					"\n:clock-r: `начало работ   :` `" + ticket.Date + "`" +
-					"\n:clock-m: `окончание работ:` `" + ticket.SolveDate + "`",
-				Footer:   fmt.Sprintf(`Изменено: %s , ID: %s `, ticket.DateMod, ticket.Id),
+					"\n:clock-g: `регистрация    :` `" + parseGlpiDate(ticket.DateCreation) + "`" +
+					"\n:clock-r: `начало работ   :` `" + parseGlpiDate(ticket.Date) + "`" +
+					"\n:clock-m: `окончание работ:` `" + parseGlpiDate(ticket.SolveDate) + "`",
+				Footer:   fmt.Sprintf(`Изменено: %s , ID: %s `, parseGlpiDate(ticket.DateMod), ticket.Id),
 				ThumbUrl: "https://support.rw/pics/glpi_project_logo.png",
 				//				Fields:    fields,
 			}}}
@@ -303,4 +304,12 @@ func getAduser(upn string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func parseGlpiDate(sDate string) string {
+	t, err := time.Parse("2006-01-02 15:04:05", sDate)
+	if err != nil {
+		return sDate
+	}
+	return t.Format("02.01.2006 15:04:05")
 }
