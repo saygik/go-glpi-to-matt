@@ -200,6 +200,12 @@ func enumeratePostsFromFilesChanges(posts []MattermostPost, dir string) error {
 				os.Remove(post.Filepath)
 			}
 		} else {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				log.Error("Ошибка: нет изменения с таким id в базе данных: " + post.Ticket.Id + ". Файл: " + post.Filepath + " удалён")
+				os.Remove(post.Filepath)
+				continue
+			}
+
 			log.Error(err)
 		}
 
@@ -328,7 +334,14 @@ func enumeratePostsFromFiles(posts []MattermostPost, dir string) error {
 				os.Remove(post.Filepath)
 			}
 		} else {
+			if strings.Contains(err.Error(), "no rows in result set") {
+				log.Error("Ошибка: нет заявки с таким id в базе данных: " + post.Ticket.Id + ". Файл: " + post.Filepath + " удалён")
+				os.Remove(post.Filepath)
+				continue
+			}
 			log.Error(err)
+			//			errors.New(err)
+			//			post.Ticket.Id
 		}
 
 	}
