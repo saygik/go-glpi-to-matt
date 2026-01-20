@@ -132,7 +132,7 @@ func (m GLPIModel) OneChange(ticketID string) (ticket Ticket, err error) {
 func (m GLPIModel) Tickets() (tickets []Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_tickets.id , glpi_tickets.content,
                                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), 'не опреденен'),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
-								 	NULLIF(glpi_users.name, '') AS author_name,
+							 	ifnull(glpi_users.name, '') AS author_name,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.id,0) AS katid,
 								CASE glpi_tickets.status
