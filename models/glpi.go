@@ -43,7 +43,7 @@ type GetOneItemFromDb func(ticketID string) (ticket Ticket, err error)
 
 func (m GLPIModel) TicketComments(ticketID string, lastId int, itemtype string) (comments []Comment, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_itilfollowups.id,glpi_itilfollowups.content, glpi_itilfollowups.date_mod,
-	                        NULLIF(glpi_users.name, '') AS author_name,
+	                        ifNull(glpi_users.name, '') AS author_name,
                             CONCAT(realname," ", firstname) AS author  FROM glpi_itilfollowups
                             LEFT JOIN glpi_users ON glpi_itilfollowups.users_id= glpi_users.id
                             WHERE items_id=%s AND itemtype="%s" AND glpi_itilfollowups.id>%d ORDER BY glpi_itilfollowups.id`, ticketID, itemtype, lastId)
@@ -56,7 +56,7 @@ func (m GLPIModel) TicketComments(ticketID string, lastId int, itemtype string) 
 
 func (m GLPIModel) TicketSolutions(ticketID string, lastId int, itemtype string) (comments []Comment, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_itilsolutions.id,glpi_itilsolutions.content, glpi_itilsolutions.date_mod,
-	                        NULLIF(glpi_users.name, '') AS author_name,
+	                        ifNull(glpi_users.name, '') AS author_name,
                             CONCAT(realname," ", firstname) AS author  FROM glpi_itilsolutions
                             LEFT JOIN glpi_users ON glpi_itilsolutions.users_id= glpi_users.id
                             WHERE items_id=%s AND itemtype="%s" AND glpi_itilsolutions.id>%d ORDER BY glpi_itilsolutions.id`, ticketID, itemtype, lastId)
@@ -70,7 +70,7 @@ func (m GLPIModel) TicketSolutions(ticketID string, lastId int, itemtype string)
 func (m GLPIModel) OneTicket(ticketID string) (ticket Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_tickets.id , glpi_tickets.content,
                                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), 'не опреденен'),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
-								 	NULLIF(glpi_users.name, '') AS author_name,
+							 	ifNull(glpi_users.name, '') AS author_name,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.id,0) AS katid,
 								CASE glpi_tickets.status
@@ -95,7 +95,7 @@ func (m GLPIModel) OneTicket(ticketID string) (ticket Ticket, err error) {
 func (m GLPIModel) OneChange(ticketID string) (ticket Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_changes.id , glpi_changes.content,
                                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), 'не опреденен'),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
-																 	NULLIF(glpi_users.name, '') AS author_name,
+							 	ifNull(glpi_users.name, '') AS author_name,
 								0 AS katid,
 								CASE glpi_changes.status
    										WHEN 1 THEN "новый"
@@ -132,7 +132,7 @@ func (m GLPIModel) OneChange(ticketID string) (ticket Ticket, err error) {
 func (m GLPIModel) Tickets() (tickets []Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_tickets.id , glpi_tickets.content,
                                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), 'не опреденен'),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
-							 	ifnull(glpi_users.name, '') AS author_name,
+							 	ifNull(glpi_users.name, '') AS author_name,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
 								ifnull(glpi_plugin_fields_failcategoryfielddropdowns.id,0) AS katid,
 								CASE glpi_tickets.status
@@ -163,7 +163,7 @@ func (m GLPIModel) Tickets() (tickets []Ticket, err error) {
 func (m GLPIModel) TicketsTest() (tickets []Ticket, err error) {
 	var proc = `SELECT glpi_tickets.id , glpi_tickets.content,
                 CONCAT(ifnull(NULLIF(glpi_users.realname, ''), 'не опреденен'),' ', ifnull(NULLIF(glpi_users.firstname, ''),'')) AS author,
-				 	NULLIF(glpi_users.name, '') AS author_name,
+			 	ifNull(glpi_users.name, '') AS author_name,
 				ifnull(glpi_plugin_fields_failcategoryfielddropdowns.completename,"-") AS kat,
 				ifnull(glpi_plugin_fields_failcategoryfielddropdowns.id,0) AS katid,
 				CASE glpi_tickets.status
@@ -204,7 +204,7 @@ func (m GLPIModel) AddOtkaz(id string) (err error) {
 func (m GLPIModel) Changes(lastId int) (tickets []Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_changes.id , glpi_changes.content,
 	TRIM(CONCAT(ifnull(NULLIF(glpi_users.realname, ''), ''),' ', ifnull(NULLIF(glpi_users.firstname, ''),''))) AS author,
-								 	NULLIF(glpi_users.name, '') AS author_name,
+ 	ifNull(glpi_users.name, '') AS author_name,
 	0 AS katid,
 	 CASE glpi_changes.status
 	 WHEN 1 THEN "новый"
@@ -245,7 +245,7 @@ END AS status,
 func (m GLPIModel) ChangesTest(lastId int) (tickets []Ticket, err error) {
 	var proc = fmt.Sprintf(`SELECT glpi_changes.id , glpi_changes.content,
 	TRIM(CONCAT(ifnull(NULLIF(glpi_users.realname, ''), ''),' ', ifnull(NULLIF(glpi_users.firstname, ''),''))) AS author,
-								 	NULLIF(glpi_users.name, '') AS author_name,
+ 	ifNull(glpi_users.name, '') AS author_name,
 	0 AS katid,
 	 CASE glpi_changes.status
 	 WHEN 1 THEN "новый"
